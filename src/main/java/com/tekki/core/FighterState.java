@@ -1,5 +1,4 @@
 package com.tekki.core;
-
 /**
  * States representing what a fighter is currently doing.
  */
@@ -8,6 +7,8 @@ public enum FighterState {
     WALKING,
     ATTACKING,
     DEFENDING,
+    JUMPING,
+    DASHING,
     HIT,
     KO
 }

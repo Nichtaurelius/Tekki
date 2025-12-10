@@ -15,7 +15,6 @@ import javax.swing.Timer;
 
 /**
  * GamePanel hosts rendering and update loop using a Swing Timer.
- * For STEP 0 it simply shows a background and start text.
  */
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
@@ -33,6 +32,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private boolean rightPressed;
     private boolean attackPressed;
     private boolean defendPressed;
+    private boolean jumpPressed;
 
     public GamePanel() {
         setPreferredSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
@@ -40,7 +40,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         setFocusable(true);
         addKeyListener(this);
 
-        // Start a Swing Timer to call actionPerformed ~60 times per second.
         int delayMs = 1000 / TARGET_FPS;
         gameTimer = new Timer(delayMs, this);
         gameTimer.start();
@@ -57,14 +56,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g.create();
 
-        // Enable antialiasing for smoother text.
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-        // Fill background for now; later we will add level art.
         g2d.setColor(new Color(30, 40, 60));
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        // Draw placeholder UI based on the current game state.
         g2d.setFont(new Font("SansSerif", Font.BOLD, 32));
         switch (gameState) {
             case MENU -> drawMenu(g2d);
@@ -78,9 +74,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.dispose();
     }
 
-    /**
-     * Called by the Swing Timer to progress the game and request repaint.
-     */
     @Override
     public void actionPerformed(ActionEvent e) {
         frameCounter++;
@@ -98,20 +91,32 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             if (defendPressed) {
                 player.startDefending();
                 attackPressed = false;
+                jumpPressed = false;
                 player.stopMoving();
             } else {
                 player.stopDefending();
-                if (leftPressed && !rightPressed) {
-                    player.moveLeft();
-                } else if (rightPressed && !leftPressed) {
-                    player.moveRight();
-                } else {
-                    player.stopMoving();
-                }
 
-                if (attackPressed) {
-                    player.startAttack();
+                if (player.getState() != FighterState.DASHING) {
+                    if (leftPressed && !rightPressed) {
+                        player.moveLeft();
+                    } else if (rightPressed && !leftPressed) {
+                        player.moveRight();
+                    } else {
+                        player.stopMoving();
+                    }
+
+                    if (jumpPressed) {
+                        player.jump();
+                        jumpPressed = false;
+                    }
+
+                    if (attackPressed && player.getState() != FighterState.JUMPING && player.getState() != FighterState.DASHING) {
+                        player.startAttack();
+                        attackPressed = false;
+                    }
+                } else {
                     attackPressed = false;
+                    jumpPressed = false;
                 }
             }
 
@@ -119,16 +124,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
     }
 
-    /**
-     * Draws the menu with a blinking prompt.
-     */
     private void drawMenu(Graphics2D g2d) {
         String prompt = "Press ENTER to start";
         int textWidth = g2d.getFontMetrics().stringWidth(prompt);
         int x = (getWidth() - textWidth) / 2;
         int y = getHeight() / 2;
 
-        // Alternate between two colors every half second for a subtle animation.
         if ((frameCounter / (TARGET_FPS / 2)) % 2 == 0) {
             g2d.setColor(Color.WHITE);
         } else {
@@ -152,9 +153,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.drawString("FIGHT", 20, 40);
     }
 
-    /**
-     * Utility to draw centered text with a specific color.
-     */
     private void drawCenteredText(Graphics2D g2d, String text, Color color) {
         int textWidth = g2d.getFontMetrics().stringWidth(text);
         int x = (getWidth() - textWidth) / 2;
@@ -165,7 +163,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyTyped(KeyEvent e) {
-        // Not used in this step.
     }
 
     @Override
@@ -191,6 +188,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             if (e.getKeyCode() == KeyEvent.VK_K) {
                 defendPressed = true;
             }
+            if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP) {
+                jumpPressed = true;
+            }
+            if (e.getKeyCode() == KeyEvent.VK_L) {
+                if (player != null) {
+                    player.startDash();
+                }
+            }
         }
     }
 
@@ -205,6 +210,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
             if (e.getKeyCode() == KeyEvent.VK_K) {
                 defendPressed = false;
+            }
+            if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP) {
+                jumpPressed = false;
             }
         }
     }

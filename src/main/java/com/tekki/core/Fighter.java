@@ -19,6 +19,12 @@ public abstract class Fighter {
     protected boolean facingRight = true;
     protected FighterState state = FighterState.IDLE;
 
+    protected float yVelocity = 0f;
+    protected float gravity = 1500f;
+    protected float jumpStrength = -650f;
+    protected boolean onGround = false;
+    protected float groundY = 380f;
+
     private float attackTimer = 0f;
     private final float attackDuration = 0.25f;
 
@@ -36,7 +42,26 @@ public abstract class Fighter {
      */
     public void update(float deltaTime) {
         x += speedX * deltaTime;
+        applyVerticalMovement(deltaTime);
         updateAttack(deltaTime);
+    }
+
+    private void applyVerticalMovement(float deltaTime) {
+        y += yVelocity * deltaTime;
+        yVelocity += gravity * deltaTime;
+
+        if (y >= groundY) {
+            y = groundY;
+            yVelocity = 0f;
+            if (!onGround) {
+                onGround = true;
+                if (state == FighterState.JUMPING || state == FighterState.DASHING) {
+                    state = Math.abs(speedX) > 0.01f ? FighterState.WALKING : FighterState.IDLE;
+                }
+            }
+        } else {
+            onGround = false;
+        }
     }
 
     /**
@@ -50,12 +75,12 @@ public abstract class Fighter {
      * Move fighter left by setting horizontal velocity and state.
      */
     public void moveLeft() {
-        if (state == FighterState.DEFENDING) {
+        if (state == FighterState.DEFENDING || state == FighterState.DASHING) {
             return;
         }
         speedX = -450f;
         facingRight = false;
-        if (state != FighterState.ATTACKING) {
+        if (state != FighterState.ATTACKING && state != FighterState.JUMPING) {
             state = FighterState.WALKING;
         }
     }
@@ -64,12 +89,12 @@ public abstract class Fighter {
      * Move fighter right by setting horizontal velocity and state.
      */
     public void moveRight() {
-        if (state == FighterState.DEFENDING) {
+        if (state == FighterState.DEFENDING || state == FighterState.DASHING) {
             return;
         }
         speedX = 450f;
         facingRight = true;
-        if (state != FighterState.ATTACKING) {
+        if (state != FighterState.ATTACKING && state != FighterState.JUMPING) {
             state = FighterState.WALKING;
         }
     }
@@ -78,8 +103,11 @@ public abstract class Fighter {
      * Stop horizontal movement.
      */
     public void stopMoving() {
+        if (state == FighterState.DASHING) {
+            return;
+        }
         speedX = 0f;
-        if (state != FighterState.ATTACKING && state != FighterState.DEFENDING) {
+        if (state != FighterState.ATTACKING && state != FighterState.DEFENDING && state != FighterState.JUMPING) {
             state = FighterState.IDLE;
         }
     }
@@ -88,7 +116,7 @@ public abstract class Fighter {
      * Begin a simple attack animation.
      */
     public void startAttack() {
-        if (state == FighterState.ATTACKING || state == FighterState.DEFENDING) {
+        if (state == FighterState.ATTACKING || state == FighterState.DEFENDING || state == FighterState.DASHING || state == FighterState.JUMPING) {
             return;
         }
         attackTimer = attackDuration;
@@ -112,6 +140,9 @@ public abstract class Fighter {
      * Begin defending; cancels movement and attack animation.
      */
     public void startDefending() {
+        if (!onGround || state == FighterState.DASHING || state == FighterState.JUMPING) {
+            return;
+        }
         speedX = 0f;
         attackTimer = 0f;
         state = FighterState.DEFENDING;
@@ -124,6 +155,18 @@ public abstract class Fighter {
         if (state == FighterState.DEFENDING) {
             state = speedX != 0 ? FighterState.WALKING : FighterState.IDLE;
         }
+    }
+
+    /**
+     * Attempt to jump if on the ground.
+     */
+    public void jump() {
+        if (!onGround || state == FighterState.DEFENDING || state == FighterState.DASHING) {
+            return;
+        }
+        yVelocity = jumpStrength;
+        onGround = false;
+        state = FighterState.JUMPING;
     }
 
     /**
@@ -140,8 +183,18 @@ public abstract class Fighter {
             case WALKING -> new Color(60, 200, 120);
             case ATTACKING -> new Color(200, 60, 60);
             case DEFENDING -> new Color(230, 210, 60);
+            case JUMPING -> new Color(120, 120, 255);
+            case DASHING -> new Color(255, 120, 200);
             case HIT -> new Color(255, 180, 60);
             case KO -> Color.GRAY;
         };
+    }
+
+    public FighterState getState() {
+        return state;
+    }
+
+    public boolean isOnGround() {
+        return onGround;
     }
 }
