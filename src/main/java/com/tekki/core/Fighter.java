@@ -19,6 +19,8 @@ public abstract class Fighter {
     protected boolean facingRight = true;
     protected FighterState state = FighterState.IDLE;
 
+    protected boolean hasHitDuringCurrentAttack = false;
+
     protected float yVelocity = 0f;
     protected float gravity = 1500f;
     protected float jumpStrength = -650f;
@@ -27,6 +29,12 @@ public abstract class Fighter {
 
     private float attackTimer = 0f;
     private final float attackDuration = 0.25f;
+
+    private final int attackBoxWidth = 50;
+    private final int attackBoxHeight = 50;
+
+    protected float hitStunDuration = 0.35f;
+    protected float hitStunTimer = 0f;
 
     protected Fighter(float x, float y, int width, int height, int maxHealth) {
         this.x = x;
@@ -41,6 +49,20 @@ public abstract class Fighter {
      * Update position and timers for this fighter.
      */
     public void update(float deltaTime) {
+        if (state == FighterState.KO) {
+            speedX = 0f;
+            return;
+        }
+
+        if (state == FighterState.HIT) {
+            speedX = 0f;
+            hitStunTimer -= deltaTime;
+            if (hitStunTimer <= 0f) {
+                hitStunTimer = 0f;
+                state = Math.abs(speedX) > 0.01f ? FighterState.WALKING : FighterState.IDLE;
+            }
+        }
+
         x += speedX * deltaTime;
         applyVerticalMovement(deltaTime);
         updateAttack(deltaTime);
@@ -123,11 +145,12 @@ public abstract class Fighter {
      * Begin a simple attack animation.
      */
     public void startAttack() {
-        if (state == FighterState.ATTACKING || state == FighterState.DEFENDING || state == FighterState.DASHING || state == FighterState.JUMPING) {
+        if (state == FighterState.ATTACKING || state == FighterState.DEFENDING || state == FighterState.DASHING || state == FighterState.JUMPING || state == FighterState.HIT || state == FighterState.KO) {
             return;
         }
         attackTimer = attackDuration;
         state = FighterState.ATTACKING;
+        hasHitDuringCurrentAttack = false;
     }
 
     /**
@@ -174,6 +197,55 @@ public abstract class Fighter {
         yVelocity = jumpStrength;
         onGround = false;
         state = FighterState.JUMPING;
+    }
+
+    public Rectangle getAttackHitbox() {
+        if (state != FighterState.ATTACKING) {
+            return null;
+        }
+        Rectangle bounds = getBounds();
+        int attackX = facingRight ? bounds.x + bounds.width : bounds.x - attackBoxWidth;
+        int attackY = bounds.y + (bounds.height / 4);
+        return new Rectangle(attackX, attackY, attackBoxWidth, attackBoxHeight);
+    }
+
+    public boolean canHit() {
+        return state == FighterState.ATTACKING && !hasHitDuringCurrentAttack && state != FighterState.KO;
+    }
+
+    public void markHit() {
+        hasHitDuringCurrentAttack = true;
+    }
+
+    public void takeDamage(int amount) {
+        if (state == FighterState.KO) {
+            return;
+        }
+        health -= amount;
+        if (health < 0) {
+            health = 0;
+        }
+
+        if (health == 0) {
+            speedX = 0f;
+            yVelocity = 0f;
+            state = FighterState.KO;
+        } else {
+            state = FighterState.HIT;
+            hitStunTimer = hitStunDuration;
+        }
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public boolean isKO() {
+        return state == FighterState.KO || health <= 0;
     }
 
     /**
