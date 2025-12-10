@@ -191,7 +191,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP) {
                 jumpPressed = true;
             }
-            if (e.getKeyCode() == KeyEvent.VK_L) {
+            if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
                 if (player != null) {
                     player.startDash();
                 }
