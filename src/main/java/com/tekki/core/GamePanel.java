@@ -27,6 +27,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private GameState gameState = GameState.MENU;
 
     private PlayerFighter player;
+    private EnemyFighter enemy;
 
     private boolean leftPressed;
     private boolean rightPressed;
@@ -87,6 +88,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             if (player == null) {
                 player = new PlayerFighter(120f, PANEL_HEIGHT - 180f);
             }
+            if (enemy == null) {
+                enemy = new EnemyFighter(PANEL_WIDTH - 220f, PANEL_HEIGHT - 180f);
+            }
 
             if (defendPressed) {
                 player.startDefending();
@@ -121,6 +125,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
 
             player.update(deltaTime);
+            enemy.updateAI(deltaTime, player);
+            enemy.update(deltaTime);
         }
     }
 
@@ -147,6 +153,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         if (player != null) {
             player.render(g2d);
+        }
+        if (enemy != null) {
+            enemy.render(g2d);
         }
 
         g2d.setColor(Color.WHITE);

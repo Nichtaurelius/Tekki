@@ -72,6 +72,13 @@ public abstract class Fighter {
     }
 
     /**
+     * Center X helper for AI and rendering alignment.
+     */
+    public float getCenterX() {
+        return x + width / 2f;
+    }
+
+    /**
      * Move fighter left by setting horizontal velocity and state.
      */
     public void moveLeft() {
