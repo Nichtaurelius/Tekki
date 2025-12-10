@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -29,6 +31,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private int score = 0;
 
+    private List<Level> levels = new ArrayList<>();
+    private int currentLevelIndex = 0;
+    private Level currentLevel;
+    private float levelTransitionTimer = 0f;
+
     private PlayerFighter player;
     private EnemyFighter enemy;
 
@@ -43,6 +50,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         setBackground(Color.DARK_GRAY);
         setFocusable(true);
         addKeyListener(this);
+
+        initLevels();
+        currentLevel = levels.get(0);
 
         int delayMs = 1000 / TARGET_FPS;
         gameTimer = new Timer(delayMs, this);
@@ -69,7 +79,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         switch (gameState) {
             case MENU -> drawMenu(g2d);
             case FIGHT -> drawFight(g2d);
-            case LEVEL_TRANSITION -> drawCenteredText(g2d, "Level Transition...", Color.YELLOW);
+            case LEVEL_TRANSITION -> drawLevelTransition(g2d);
             case GAME_OVER -> drawGameOver(g2d);
             case VICTORY -> drawVictory(g2d);
             default -> drawMenu(g2d);
@@ -88,11 +98,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private void updateGame(float deltaTime) {
         if (gameState == GameState.FIGHT) {
-            if (player == null) {
-                player = new PlayerFighter(120f, PANEL_HEIGHT - 180f);
-            }
-            if (enemy == null) {
-                enemy = new EnemyFighter(PANEL_WIDTH - 220f, PANEL_HEIGHT - 180f);
+            if (player == null || enemy == null) {
+                startLevel(currentLevelIndex);
             }
 
             if (!player.isKO() && !enemy.isKO()) {
@@ -133,6 +140,17 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 enemy.update(deltaTime);
                 handleCombat();
             }
+        } else if (gameState == GameState.LEVEL_TRANSITION) {
+            levelTransitionTimer -= deltaTime;
+            if (levelTransitionTimer <= 0f) {
+                int nextIndex = currentLevelIndex + 1;
+                if (nextIndex < levels.size()) {
+                    startLevel(nextIndex);
+                    gameState = GameState.FIGHT;
+                } else {
+                    gameState = GameState.VICTORY;
+                }
+            }
         }
     }
 
@@ -159,7 +177,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         if (gameState == GameState.FIGHT) {
             if (enemy.isKO()) {
-                gameState = GameState.VICTORY;
+                if (currentLevelIndex + 1 < levels.size()) {
+                    gameState = GameState.LEVEL_TRANSITION;
+                    levelTransitionTimer = 2.0f;
+                } else {
+                    gameState = GameState.VICTORY;
+                }
             } else if (player.isKO()) {
                 gameState = GameState.GAME_OVER;
             }
@@ -181,10 +204,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void drawFight(Graphics2D g2d) {
-        g2d.setColor(new Color(50, 70, 90));
+        Color bg = currentLevel != null ? currentLevel.getBackgroundColor() : new Color(50, 70, 90);
+        Color floor = currentLevel != null ? currentLevel.getFloorColor() : new Color(80, 60, 40);
+
+        g2d.setColor(bg);
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        g2d.setColor(new Color(80, 60, 40));
+        g2d.setColor(floor);
         g2d.fillRect(0, (int) (PANEL_HEIGHT - 60), getWidth(), 60);
 
         if (player != null) {
@@ -227,6 +253,22 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         g2d.setColor(Color.WHITE);
         g2d.drawString("Score: " + score, (getWidth() / 2) - 40, padding + barHeight + 16);
+
+        if (currentLevel != null && !levels.isEmpty()) {
+            String stageLabel = "Stage: " + currentLevel.getName() + " (" + (currentLevelIndex + 1) + "/" + levels.size() + ")";
+            g2d.drawString(stageLabel, (getWidth() / 2) - 80, padding + barHeight + 36);
+        }
+    }
+
+    private void drawLevelTransition(Graphics2D g2d) {
+        g2d.setColor(new Color(60, 60, 30));
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 42));
+        String next = currentLevelIndex + 1 < levels.size() ? levels.get(currentLevelIndex + 1).getName() : "";
+        String message = "Next Stage: " + next;
+        drawCenteredText(g2d, message, Color.WHITE);
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 22));
+        drawCenteredTextOffset(g2d, "Get Ready...", Color.LIGHT_GRAY, 40);
     }
 
     private void drawGameOver(Graphics2D g2d) {
@@ -285,6 +327,40 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.drawString(label, x, y + height + 14);
     }
 
+    private void initLevels() {
+        levels.clear();
+        levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false));
+        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 1.3f, 1.5f, true));
+    }
+
+    private void startLevel(int levelIndex) {
+        currentLevelIndex = levelIndex;
+        currentLevel = levels.get(currentLevelIndex);
+        player = new PlayerFighter(120f, PANEL_HEIGHT - 180f);
+        enemy = new EnemyFighter(PANEL_WIDTH - 220f, PANEL_HEIGHT - 180f, currentLevel.getEnemySpeedMultiplier(),
+                currentLevel.getEnemyAggression(), currentLevel.isEnemyDashesMore());
+        leftPressed = false;
+        rightPressed = false;
+        attackPressed = false;
+        defendPressed = false;
+        jumpPressed = false;
+    }
+
+    private void resetToMenu() {
+        gameState = GameState.MENU;
+        score = 0;
+        player = null;
+        enemy = null;
+        leftPressed = false;
+        rightPressed = false;
+        attackPressed = false;
+        defendPressed = false;
+        jumpPressed = false;
+        currentLevelIndex = 0;
+        currentLevel = levels.get(0);
+        levelTransitionTimer = 0f;
+    }
+
     @Override
     public void keyTyped(KeyEvent e) {
     }
@@ -293,20 +369,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
             if (gameState == GameState.MENU) {
+                score = 0;
+                currentLevelIndex = 0;
+                currentLevel = levels.get(0);
+                player = null;
+                enemy = null;
+                levelTransitionTimer = 0f;
                 gameState = GameState.FIGHT;
-                score = 0;
-                player = null;
-                enemy = null;
             } else if (gameState == GameState.GAME_OVER || gameState == GameState.VICTORY) {
-                gameState = GameState.MENU;
-                score = 0;
-                player = null;
-                enemy = null;
-                leftPressed = false;
-                rightPressed = false;
-                attackPressed = false;
-                defendPressed = false;
-                jumpPressed = false;
+                resetToMenu();
             }
         }
 

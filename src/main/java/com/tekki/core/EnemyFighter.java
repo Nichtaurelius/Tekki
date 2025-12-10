@@ -13,7 +13,7 @@ public class EnemyFighter extends Fighter {
     private final float preferredDistance;
     private float aiDecisionTimer;
     private final float aiDecisionInterval;
-    private final float attackCooldown;
+    private final float baseAttackCooldown;
     private float attackCooldownTimer;
     private final Random random = new Random();
 
@@ -24,15 +24,26 @@ public class EnemyFighter extends Fighter {
     private float dashCooldown = 1.0f;
     private float dashCooldownTimer = 0f;
 
-    public EnemyFighter(float startX, float startY) {
+    private final float speedMultiplier;
+    private final float aggression;
+    private final boolean dashMore;
+
+    public EnemyFighter(float startX, float startY, float speedMultiplier, float aggression, boolean dashMore) {
         super(startX, startY, 50, 100, 100);
         this.name = "CPU Fighter";
         this.attackRange = 110f;
         this.preferredDistance = 95f;
-        this.aiDecisionInterval = 0.4f;
-        this.attackCooldown = 1.0f;
+        this.aiDecisionInterval = Math.max(0.2f, 0.4f / Math.max(0.5f, aggression));
+        this.baseAttackCooldown = 1.0f / Math.max(0.5f, aggression);
         this.aiDecisionTimer = aiDecisionInterval;
         this.attackCooldownTimer = 0f;
+        this.speedMultiplier = Math.max(0.5f, speedMultiplier);
+        this.aggression = Math.max(0.5f, aggression);
+        this.dashMore = dashMore;
+        if (dashMore) {
+            this.dashCooldown = 0.75f;
+            this.dashSpeed = 900f;
+        }
     }
 
     /**
@@ -65,13 +76,13 @@ public class EnemyFighter extends Fighter {
                     }
                 } else {
                     int roll = random.nextInt(100);
-                    if (roll < 30) {
+                    if (roll < (int) (25 * aggression)) {
                         stopMoving();
                         startDefending();
-                    } else if (roll < 70 && attackCooldownTimer <= 0f) {
+                    } else if (roll < (int) (65 * aggression) && attackCooldownTimer <= 0f) {
                         stopMoving();
                         startAttack();
-                        attackCooldownTimer = attackCooldown;
+                        attackCooldownTimer = Math.max(0.35f, baseAttackCooldown);
                     } else {
                         if (distance < preferredDistance) {
                             if (dx > 0) {
@@ -89,6 +100,30 @@ public class EnemyFighter extends Fighter {
 
         if (state == FighterState.DEFENDING && random.nextInt(100) < 20) {
             stopDefending();
+        }
+    }
+
+    @Override
+    public void moveLeft() {
+        if (state == FighterState.DEFENDING || state == FighterState.DASHING) {
+            return;
+        }
+        speedX = -450f * speedMultiplier;
+        facingRight = false;
+        if (state != FighterState.ATTACKING && state != FighterState.JUMPING) {
+            state = FighterState.WALKING;
+        }
+    }
+
+    @Override
+    public void moveRight() {
+        if (state == FighterState.DEFENDING || state == FighterState.DASHING) {
+            return;
+        }
+        speedX = 450f * speedMultiplier;
+        facingRight = true;
+        if (state != FighterState.ATTACKING && state != FighterState.JUMPING) {
+            state = FighterState.WALKING;
         }
     }
 
@@ -128,8 +163,9 @@ public class EnemyFighter extends Fighter {
     }
 
     private boolean shouldDash(float distance) {
+        int chance = dashMore ? 55 : 35;
         return onGround && distance > preferredDistance && distance < preferredDistance + 180f && dashCooldownTimer <= 0f
-                && random.nextInt(100) < 35;
+                && random.nextInt(100) < chance;
     }
 
     private void startDashToward(PlayerFighter player) {
