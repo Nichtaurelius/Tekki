@@ -27,6 +27,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private long frameCounter = 0;
     private GameState gameState = GameState.MENU;
 
+    private PlayerFighter player;
+
+    private boolean leftPressed;
+    private boolean rightPressed;
+    private boolean attackPressed;
+
     public GamePanel() {
         setPreferredSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
         setBackground(Color.DARK_GRAY);
@@ -61,7 +67,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.setFont(new Font("SansSerif", Font.BOLD, 32));
         switch (gameState) {
             case MENU -> drawMenu(g2d);
-            case FIGHT -> drawCenteredText(g2d, "Fight!", Color.WHITE);
+            case FIGHT -> drawFight(g2d);
             case LEVEL_TRANSITION -> drawCenteredText(g2d, "Level Transition...", Color.YELLOW);
             case GAME_OVER -> drawCenteredText(g2d, "Game Over - Press ENTER", Color.RED);
             case VICTORY -> drawCenteredText(g2d, "Victory!", new Color(0, 200, 0));
@@ -77,7 +83,32 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         frameCounter++;
+        float deltaTime = 1f / TARGET_FPS;
+        updateGame(deltaTime);
         repaint();
+    }
+
+    private void updateGame(float deltaTime) {
+        if (gameState == GameState.FIGHT) {
+            if (player == null) {
+                player = new PlayerFighter(120f, PANEL_HEIGHT - 180f);
+            }
+
+            if (leftPressed && !rightPressed) {
+                player.moveLeft();
+            } else if (rightPressed && !leftPressed) {
+                player.moveRight();
+            } else {
+                player.stopMoving();
+            }
+
+            if (attackPressed) {
+                player.startAttack();
+                attackPressed = false;
+            }
+
+            player.update(deltaTime);
+        }
     }
 
     /**
@@ -96,6 +127,21 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.setColor(new Color(200, 200, 255));
         }
         g2d.drawString(prompt, x, y);
+    }
+
+    private void drawFight(Graphics2D g2d) {
+        g2d.setColor(new Color(50, 70, 90));
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+
+        g2d.setColor(new Color(80, 60, 40));
+        g2d.fillRect(0, (int) (PANEL_HEIGHT - 60), getWidth(), 60);
+
+        if (player != null) {
+            player.render(g2d);
+        }
+
+        g2d.setColor(Color.WHITE);
+        g2d.drawString("FIGHT", 20, 40);
     }
 
     /**
@@ -123,10 +169,29 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 gameState = GameState.MENU;
             }
         }
+
+        if (gameState == GameState.FIGHT) {
+            if (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT) {
+                leftPressed = true;
+            }
+            if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                rightPressed = true;
+            }
+            if (e.getKeyCode() == KeyEvent.VK_J) {
+                attackPressed = true;
+            }
+        }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        // Not used in this step.
+        if (gameState == GameState.FIGHT) {
+            if (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT) {
+                leftPressed = false;
+            }
+            if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                rightPressed = false;
+            }
+        }
     }
 }
