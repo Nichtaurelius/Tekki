@@ -11,6 +11,14 @@ public class PlayerFighter extends Fighter {
         super(startX, startY, 50, 100, 100);
     }
 
+    public void startDefending() {
+        super.startDefending();
+    }
+
+    public void stopDefending() {
+        super.stopDefending();
+    }
+
     @Override
     public void render(Graphics2D g2d) {
         g2d.setColor(colorForState());

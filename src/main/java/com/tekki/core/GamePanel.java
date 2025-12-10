@@ -32,6 +32,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private boolean leftPressed;
     private boolean rightPressed;
     private boolean attackPressed;
+    private boolean defendPressed;
 
     public GamePanel() {
         setPreferredSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
@@ -94,17 +95,24 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 player = new PlayerFighter(120f, PANEL_HEIGHT - 180f);
             }
 
-            if (leftPressed && !rightPressed) {
-                player.moveLeft();
-            } else if (rightPressed && !leftPressed) {
-                player.moveRight();
-            } else {
-                player.stopMoving();
-            }
-
-            if (attackPressed) {
-                player.startAttack();
+            if (defendPressed) {
+                player.startDefending();
                 attackPressed = false;
+                player.stopMoving();
+            } else {
+                player.stopDefending();
+                if (leftPressed && !rightPressed) {
+                    player.moveLeft();
+                } else if (rightPressed && !leftPressed) {
+                    player.moveRight();
+                } else {
+                    player.stopMoving();
+                }
+
+                if (attackPressed) {
+                    player.startAttack();
+                    attackPressed = false;
+                }
             }
 
             player.update(deltaTime);
@@ -180,6 +188,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             if (e.getKeyCode() == KeyEvent.VK_J) {
                 attackPressed = true;
             }
+            if (e.getKeyCode() == KeyEvent.VK_K) {
+                defendPressed = true;
+            }
         }
     }
 
@@ -191,6 +202,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
             if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_RIGHT) {
                 rightPressed = false;
+            }
+            if (e.getKeyCode() == KeyEvent.VK_K) {
+                defendPressed = false;
             }
         }
     }

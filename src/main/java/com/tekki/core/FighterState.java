@@ -7,6 +7,7 @@ public enum FighterState {
     IDLE,
     WALKING,
     ATTACKING,
+    DEFENDING,
     HIT,
     KO
 }

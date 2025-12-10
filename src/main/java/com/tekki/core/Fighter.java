@@ -50,7 +50,10 @@ public abstract class Fighter {
      * Move fighter left by setting horizontal velocity and state.
      */
     public void moveLeft() {
-        speedX = -150f;
+        if (state == FighterState.DEFENDING) {
+            return;
+        }
+        speedX = -450f;
         facingRight = false;
         if (state != FighterState.ATTACKING) {
             state = FighterState.WALKING;
@@ -61,7 +64,10 @@ public abstract class Fighter {
      * Move fighter right by setting horizontal velocity and state.
      */
     public void moveRight() {
-        speedX = 150f;
+        if (state == FighterState.DEFENDING) {
+            return;
+        }
+        speedX = 450f;
         facingRight = true;
         if (state != FighterState.ATTACKING) {
             state = FighterState.WALKING;
@@ -73,7 +79,7 @@ public abstract class Fighter {
      */
     public void stopMoving() {
         speedX = 0f;
-        if (state != FighterState.ATTACKING) {
+        if (state != FighterState.ATTACKING && state != FighterState.DEFENDING) {
             state = FighterState.IDLE;
         }
     }
@@ -82,7 +88,7 @@ public abstract class Fighter {
      * Begin a simple attack animation.
      */
     public void startAttack() {
-        if (state == FighterState.ATTACKING) {
+        if (state == FighterState.ATTACKING || state == FighterState.DEFENDING) {
             return;
         }
         attackTimer = attackDuration;
@@ -103,6 +109,24 @@ public abstract class Fighter {
     }
 
     /**
+     * Begin defending; cancels movement and attack animation.
+     */
+    public void startDefending() {
+        speedX = 0f;
+        attackTimer = 0f;
+        state = FighterState.DEFENDING;
+    }
+
+    /**
+     * Stop defending; return to idle or walking depending on movement.
+     */
+    public void stopDefending() {
+        if (state == FighterState.DEFENDING) {
+            state = speedX != 0 ? FighterState.WALKING : FighterState.IDLE;
+        }
+    }
+
+    /**
      * Render the fighter. Subclasses should override for custom visuals.
      */
     public abstract void render(Graphics2D g2d);
@@ -115,6 +139,7 @@ public abstract class Fighter {
             case IDLE -> new Color(60, 120, 255);
             case WALKING -> new Color(60, 200, 120);
             case ATTACKING -> new Color(200, 60, 60);
+            case DEFENDING -> new Color(230, 210, 60);
             case HIT -> new Color(255, 180, 60);
             case KO -> Color.GRAY;
         };
