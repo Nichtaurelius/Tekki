@@ -27,6 +27,8 @@ public abstract class Fighter {
     protected boolean onGround = false;
     protected float groundY = 380f;
 
+    protected String name = "Fighter";
+
     private float attackTimer = 0f;
     private final float attackDuration = 0.25f;
 
@@ -275,5 +277,9 @@ public abstract class Fighter {
 
     public boolean isOnGround() {
         return onGround;
+    }
+
+    public String getName() {
+        return name;
     }
 }

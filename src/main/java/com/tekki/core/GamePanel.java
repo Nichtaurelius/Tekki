@@ -71,7 +71,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             case FIGHT -> drawFight(g2d);
             case LEVEL_TRANSITION -> drawCenteredText(g2d, "Level Transition...", Color.YELLOW);
             case GAME_OVER -> drawGameOver(g2d);
-            case VICTORY -> drawCenteredText(g2d, "Victory!", new Color(0, 200, 0));
+            case VICTORY -> drawVictory(g2d);
             default -> drawMenu(g2d);
         }
 
@@ -132,10 +132,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 enemy.updateAI(deltaTime, player);
                 enemy.update(deltaTime);
                 handleCombat();
-
-                if (player.isKO() || enemy.isKO()) {
-                    gameState = GameState.GAME_OVER;
-                }
             }
         }
     }
@@ -159,6 +155,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         if (enemy.canHit() && enemyHit != null && enemyHit.intersects(playerBounds)) {
             player.takeDamage(10);
             enemy.markHit();
+        }
+
+        if (gameState == GameState.FIGHT) {
+            if (enemy.isKO()) {
+                gameState = GameState.VICTORY;
+            } else if (player.isKO()) {
+                gameState = GameState.GAME_OVER;
+            }
         }
     }
 
@@ -208,7 +212,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.setColor(new Color(80, 200, 120));
             g2d.fillRect(padding, padding, fill, barHeight);
             g2d.setColor(Color.WHITE);
-            g2d.drawString("P1 HP: " + player.getHealth() + "/" + player.getMaxHealth(), padding, padding + barHeight + 16);
+            g2d.drawString(player.getName() + " HP: " + player.getHealth() + "/" + player.getMaxHealth(), padding, padding + barHeight + 16);
+            drawDashIndicator(g2d, padding, padding + barHeight + 32, barWidth, 12);
         }
 
         if (enemy != null) {
@@ -217,7 +222,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.setColor(new Color(200, 120, 80));
             g2d.fillRect(getWidth() - barWidth - padding, padding, fill, barHeight);
             g2d.setColor(Color.WHITE);
-            g2d.drawString("CPU HP: " + enemy.getHealth() + "/" + enemy.getMaxHealth(), getWidth() - barWidth - padding, padding + barHeight + 16);
+            g2d.drawString(enemy.getName() + " HP: " + enemy.getHealth() + "/" + enemy.getMaxHealth(), getWidth() - barWidth - padding, padding + barHeight + 16);
         }
 
         g2d.setColor(Color.WHITE);
@@ -225,14 +230,25 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void drawGameOver(Graphics2D g2d) {
-        drawFight(g2d);
-        g2d.setColor(new Color(0, 0, 0, 150));
+        g2d.setColor(new Color(80, 20, 30));
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        g2d.setFont(new Font("SansSerif", Font.BOLD, 48));
-        drawCenteredText(g2d, "KO", Color.RED);
-        g2d.setFont(new Font("SansSerif", Font.BOLD, 24));
-        drawCenteredText(g2d, "Game Over - Press ENTER", Color.WHITE);
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 64));
+        drawCenteredText(g2d, "YOU LOSE", Color.WHITE);
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 24));
+        drawCenteredTextOffset(g2d, "Final Score: " + score, Color.LIGHT_GRAY, 40);
+        drawCenteredTextOffset(g2d, "Press ENTER to return to menu", Color.WHITE, 80);
+    }
+
+    private void drawVictory(Graphics2D g2d) {
+        g2d.setColor(new Color(20, 80, 60));
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 64));
+        drawCenteredText(g2d, "YOU WIN", Color.WHITE);
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 24));
+        drawCenteredTextOffset(g2d, "Final Score: " + score, Color.LIGHT_GRAY, 40);
+        drawCenteredTextOffset(g2d, "Press ENTER to return to menu", Color.WHITE, 80);
     }
 
     private void drawCenteredText(Graphics2D g2d, String text, Color color) {
@@ -241,6 +257,32 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         int y = getHeight() / 2;
         g2d.setColor(color);
         g2d.drawString(text, x, y);
+    }
+
+    private void drawCenteredTextOffset(Graphics2D g2d, String text, Color color, int yOffset) {
+        int textWidth = g2d.getFontMetrics().stringWidth(text);
+        int x = (getWidth() - textWidth) / 2;
+        int y = (getHeight() / 2) + yOffset;
+        g2d.setColor(color);
+        g2d.drawString(text, x, y);
+    }
+
+    private void drawDashIndicator(Graphics2D g2d, int x, int y, int width, int height) {
+        if (player == null) {
+            return;
+        }
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.fillRect(x, y, width, height);
+        if (player.getDashCooldown() > 0f) {
+            float remaining = Math.max(0f, player.getDashCooldownTimer());
+            float ratio = 1f - Math.min(1f, remaining / player.getDashCooldown());
+            int fill = (int) (width * ratio);
+            g2d.setColor(player.isDashReady() ? new Color(100, 220, 255) : new Color(120, 120, 120));
+            g2d.fillRect(x, y, fill, height);
+        }
+        g2d.setColor(Color.WHITE);
+        String label = player.isDashReady() ? "Dash: READY" : "Dash: COOLDOWN";
+        g2d.drawString(label, x, y + height + 14);
     }
 
     @Override
@@ -257,8 +299,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 enemy = null;
             } else if (gameState == GameState.GAME_OVER || gameState == GameState.VICTORY) {
                 gameState = GameState.MENU;
+                score = 0;
                 player = null;
                 enemy = null;
+                leftPressed = false;
+                rightPressed = false;
+                attackPressed = false;
+                defendPressed = false;
+                jumpPressed = false;
             }
         }
 

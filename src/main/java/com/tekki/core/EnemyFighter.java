@@ -17,8 +17,16 @@ public class EnemyFighter extends Fighter {
     private float attackCooldownTimer;
     private final Random random = new Random();
 
+    private boolean isDashing = false;
+    private float dashSpeed = 800f;
+    private float dashDuration = 0.15f;
+    private float dashTimer = 0f;
+    private float dashCooldown = 1.0f;
+    private float dashCooldownTimer = 0f;
+
     public EnemyFighter(float startX, float startY) {
         super(startX, startY, 50, 100, 100);
+        this.name = "CPU Fighter";
         this.attackRange = 110f;
         this.preferredDistance = 95f;
         this.aiDecisionInterval = 0.4f;
@@ -33,6 +41,9 @@ public class EnemyFighter extends Fighter {
     public void updateAI(float deltaTime, PlayerFighter player) {
         aiDecisionTimer -= deltaTime;
         attackCooldownTimer -= deltaTime;
+        if (dashCooldownTimer > 0f) {
+            dashCooldownTimer -= deltaTime;
+        }
 
         float dx = player.getCenterX() - getCenterX();
         facingRight = dx >= 0;
@@ -43,10 +54,14 @@ public class EnemyFighter extends Fighter {
 
             if (state != FighterState.ATTACKING && state != FighterState.DEFENDING && state != FighterState.DASHING) {
                 if (distance > attackRange) {
-                    if (dx > 0) {
-                        moveRight();
+                    if (shouldDash(distance)) {
+                        startDashToward(player);
                     } else {
-                        moveLeft();
+                        if (dx > 0) {
+                            moveRight();
+                        } else {
+                            moveLeft();
+                        }
                     }
                 } else {
                     int roll = random.nextInt(100);
@@ -64,7 +79,7 @@ public class EnemyFighter extends Fighter {
                             } else {
                                 moveRight();
                             }
-                        } else {
+                        } else if (!isDashing) {
                             stopMoving();
                         }
                     }
@@ -79,6 +94,17 @@ public class EnemyFighter extends Fighter {
 
     @Override
     public void update(float deltaTime) {
+        if (isDashing) {
+            dashTimer -= deltaTime;
+            if (dashTimer <= 0f) {
+                isDashing = false;
+                dashCooldownTimer = dashCooldown;
+                speedX = 0f;
+                if (state == FighterState.DASHING) {
+                    state = onGround ? FighterState.IDLE : FighterState.JUMPING;
+                }
+            }
+        }
         super.update(deltaTime);
     }
 
@@ -99,5 +125,21 @@ public class EnemyFighter extends Fighter {
             case HIT -> new Color(255, 200, 120);
             case KO -> Color.DARK_GRAY;
         };
+    }
+
+    private boolean shouldDash(float distance) {
+        return onGround && distance > preferredDistance && distance < preferredDistance + 180f && dashCooldownTimer <= 0f
+                && random.nextInt(100) < 35;
+    }
+
+    private void startDashToward(PlayerFighter player) {
+        if (!onGround || isDashing || state == FighterState.DEFENDING || state == FighterState.ATTACKING || dashCooldownTimer > 0
+                || state == FighterState.HIT) {
+            return;
+        }
+        isDashing = true;
+        dashTimer = dashDuration;
+        speedX = player.getCenterX() >= getCenterX() ? dashSpeed : -dashSpeed;
+        state = FighterState.DASHING;
     }
 }
