@@ -38,10 +38,10 @@ public class PlayerFighter extends Fighter {
 
     private void loadAnimations() {
         try {
-            BufferedImage idleSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/sprites/player/IDLE.png")));
-            BufferedImage runSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/sprites/player/RUN.png")));
-            BufferedImage attackSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/sprites/player/ATTACK 1.png")));
-            BufferedImage hurtSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/sprites/player/HURT.png")));
+            BufferedImage idleSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/resources/sprites/player/IDLE.png")));
+            BufferedImage runSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/resources/sprites/player/RUN.png")));
+            BufferedImage attackSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/resources/sprites/player/ATTACK 1.png")));
+            BufferedImage hurtSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/resources/sprites/player/HURT.png")));
 
             idleAnimation = new SpriteAnimation(idleSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 10, 0.09f, true);
             runAnimation = new SpriteAnimation(runSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 16, 0.06f, true);
