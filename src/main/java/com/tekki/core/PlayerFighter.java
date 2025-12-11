@@ -14,6 +14,9 @@ public class PlayerFighter extends Fighter {
     private static final float RENDER_SCALE = 0.5f;
     private static final int COLLISION_WIDTH = 96;
     private static final int COLLISION_HEIGHT = 64;
+    private static final int AVATAR_VISUAL_HEIGHT = 110;
+    private static final int AVATAR_VISUAL_WIDTH = 50;
+    private static final int AVATAR_FOOT_OFFSET_FROM_BOTTOM = 45;
 
     private boolean isDashing = false;
     private float dashSpeed = 900f;
@@ -31,6 +34,8 @@ public class PlayerFighter extends Fighter {
     private SpriteAnimation takeHitAnimation;
     private SpriteAnimation deathAnimation;
     private SpriteAnimation currentAnimation;
+    private SpriteAnimation activeAttackAnimation;
+    private boolean useFirstAttackNext = true;
 
     public PlayerFighter(float startX, float startY, CharacterProfile profile) {
         super(
@@ -108,8 +113,12 @@ public class PlayerFighter extends Fighter {
     public void startAttack() {
         FighterState previousState = state;
         super.startAttack();
-        if (state == FighterState.ATTACKING && previousState != FighterState.ATTACKING && attack1Animation != null) {
-            attack1Animation.reset();
+        if (state == FighterState.ATTACKING && previousState != FighterState.ATTACKING) {
+            activeAttackAnimation = useFirstAttackNext ? attack1Animation : attack2Animation;
+            if (activeAttackAnimation != null) {
+                activeAttackAnimation.reset();
+            }
+            useFirstAttackNext = !useFirstAttackNext;
         }
     }
 
@@ -143,7 +152,7 @@ public class PlayerFighter extends Fighter {
         } else if (state == FighterState.HIT) {
             nextAnimation = takeHitAnimation;
         } else if (state == FighterState.ATTACKING) {
-            nextAnimation = attack1Animation;
+            nextAnimation = activeAttackAnimation != null ? activeAttackAnimation : attack1Animation;
         } else if (state == FighterState.JUMPING || !onGround) {
             nextAnimation = yVelocity < 0 ? jumpAnimation : fallAnimation;
         } else if (state == FighterState.WALKING || state == FighterState.DASHING) {
@@ -170,8 +179,12 @@ public class PlayerFighter extends Fighter {
         int drawWidth = (int) (frame.getWidth() * RENDER_SCALE);
         int drawHeight = (int) (frame.getHeight() * RENDER_SCALE);
 
-        int drawX = (int) (x + (width - drawWidth) / 2f);
-        int drawY = (int) (y + height - drawHeight);
+        float collisionBottomY = y + height;
+        float frameFootFromTop = frame.getHeight() - AVATAR_FOOT_OFFSET_FROM_BOTTOM;
+        int drawY = Math.round(collisionBottomY - frameFootFromTop * RENDER_SCALE);
+
+        float centerX = getCenterX();
+        int drawX = Math.round(centerX - drawWidth / 2f);
 
         if (facingRight) {
             g2d.drawImage(frame, drawX, drawY, drawWidth, drawHeight, null);
