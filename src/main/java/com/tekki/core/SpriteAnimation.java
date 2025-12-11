@@ -11,13 +11,9 @@ public class SpriteAnimation {
     private final boolean looping;
 
     public SpriteAnimation(BufferedImage spriteSheet,
-                        int sheetFrameWidth,
-                        int sheetFrameHeight,
-                        int innerFrameWidth,
-                        int innerFrameHeight,
-                        int frameCount,
-                        float frameDuration,
-                        boolean looping) {
+                           int frameCount,
+                           float frameDuration,
+                           boolean looping) {
         this.frames = new BufferedImage[frameCount];
         this.frameDuration = frameDuration;
         this.looping = looping;
@@ -40,9 +36,14 @@ public class SpriteAnimation {
             int height = blockHeight;
 
             // Sicherheit: nicht über den Rand schneiden
+            width = Math.min(width, sheetWidth - blockX);
+            if (width <= 0) {
+                width = Math.max(1, sheetWidth - blockX);
+            }
             if (blockX + width > sheetWidth) {
                 width = sheetWidth - blockX;
             }
+            width = Math.max(1, width);
 
             frames[i] = spriteSheet.getSubimage(blockX, blockY, width, height);
         }
