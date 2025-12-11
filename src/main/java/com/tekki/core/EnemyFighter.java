@@ -164,4 +164,5 @@ public class EnemyFighter extends Fighter {
         speedX = player.getCenterX() >= getCenterX() ? dashSpeed : -dashSpeed;
         state = FighterState.DASHING;
     }
+
 }

@@ -1,6 +1,7 @@
 package com.tekki.core;
 
 import java.awt.Color;
+import java.awt.GradientPaint;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -13,6 +14,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -44,9 +46,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Color hitFlashColor = Color.WHITE;
     private float koOverlayTimer = 0f;
     private static final float KO_OVERLAY_DURATION = 1.5f;
+    private float postKoTimer = 0f;
+    private static final float POST_KO_DURATION = 5.0f;
+    private boolean playerWon = false;
 
     private PlayerFighter player;
     private EnemyFighter enemy;
+
+    private final Random random = new Random();
 
     private boolean leftPressed;
     private boolean rightPressed;
@@ -88,6 +95,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         switch (gameState) {
             case MENU -> drawMenu(g2d);
             case FIGHT -> drawFight(g2d);
+            case POST_KO -> drawPostKO(g2d);
+            case RESULT_SCREEN -> drawResultScreen(g2d);
             case LEVEL_TRANSITION -> drawLevelTransition(g2d);
             case GAME_OVER -> drawGameOver(g2d);
             case VICTORY -> drawVictory(g2d);
@@ -169,6 +178,18 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 enemy.update(deltaTime);
                 handleCombat();
             }
+        } else if (gameState == GameState.POST_KO) {
+            if (player != null) {
+                player.update(deltaTime);
+            }
+            if (enemy != null) {
+                enemy.update(deltaTime);
+            }
+            postKoTimer -= deltaTime;
+            if (postKoTimer <= 0f) {
+                postKoTimer = 0f;
+                gameState = GameState.RESULT_SCREEN;
+            }
         } else if (gameState == GameState.LEVEL_TRANSITION) {
             levelTransitionTimer -= deltaTime;
             if (levelTransitionTimer <= 0f) {
@@ -198,6 +219,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             if (player.getState() == FighterState.DASHING) {
                 damage *= 2;
             }
+            if (isCriticalHit()) {
+                damage *= 2;
+            }
             enemy.takeDamage(damage);
             player.markHit();
             score += damage;
@@ -207,6 +231,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         if (enemy.canHit() && enemyHit != null && enemyHit.intersects(playerBounds)) {
             int enemyDamage = currentLevel != null ? currentLevel.getEnemyDamage() : 10;
+            if (isCriticalHit()) {
+                enemyDamage *= 2;
+                player.triggerCriticalHitEffect();
+            }
             player.takeDamage(enemyDamage);
             enemy.markHit();
             hitFlashTimer = HIT_FLASH_DURATION;
@@ -214,35 +242,40 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
 
         if (gameState == GameState.FIGHT) {
-            if (enemy.isKO()) {
+            if (enemy.isKO() || player.isKO()) {
                 koOverlayTimer = KO_OVERLAY_DURATION;
-                if (currentLevelIndex + 1 < levels.size()) {
-                    gameState = GameState.LEVEL_TRANSITION;
-                    levelTransitionTimer = 2.0f;
-                } else {
-                    gameState = GameState.VICTORY;
-                }
-            } else if (player.isKO()) {
-                koOverlayTimer = KO_OVERLAY_DURATION;
-                gameState = GameState.GAME_OVER;
+                playerWon = enemy.isKO() && !player.isKO();
+                postKoTimer = POST_KO_DURATION;
+                gameState = GameState.POST_KO;
             }
         }
     }
 
+    private boolean isCriticalHit() {
+        return random.nextInt(5) == 0;
+    }
+
     private void drawMenu(Graphics2D g2d) {
-        g2d.setColor(Color.BLACK);
+        GradientPaint gradient = new GradientPaint(0, 0, new Color(20, 30, 60), 0, getHeight(), new Color(10, 10, 20));
+        g2d.setPaint(gradient);
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        g2d.setColor(new Color(0, 0, 0, 120));
-        g2d.fillRect(0, 0, getWidth(), getHeight());
+        g2d.setColor(new Color(255, 255, 255, 30));
+        g2d.fillRoundRect(140, 80, getWidth() - 280, getHeight() - 200, 40, 40);
+        g2d.setColor(new Color(180, 200, 230, 60));
+        g2d.fillRoundRect(170, 110, getWidth() - 340, getHeight() - 260, 30, 30);
+
+        g2d.setColor(new Color(220, 230, 245, 90));
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 28));
+        drawCenteredTextAt(g2d, "Menu Background Placeholder", Color.WHITE, 140);
 
         g2d.setFont(new Font("SansSerif", Font.BOLD, 72));
-        drawCenteredTextAt(g2d, "JAVA BRAWL", Color.WHITE, 150);
+        drawCenteredTextAt(g2d, "JAVA BRAWL", Color.WHITE, 210);
 
         g2d.setFont(new Font("SansSerif", Font.BOLD, 32));
         String prompt = "Press ENTER to Start";
         Color promptColor = (frameCounter / (TARGET_FPS / 2)) % 2 == 0 ? Color.WHITE : new Color(200, 200, 255);
-        drawCenteredTextAt(g2d, prompt, promptColor, 260);
+        drawCenteredTextAt(g2d, prompt, promptColor, 320);
 
         g2d.setFont(new Font("SansSerif", Font.PLAIN, 16));
         drawCenteredTextAt(g2d, "© 2025 Student Project – Prototype Build", new Color(200, 200, 200), getHeight() - 30);
@@ -275,6 +308,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         if (hitFlashTimer > 0f) {
             drawHitFlash(g2d);
         }
+    }
+
+    private void drawPostKO(Graphics2D g2d) {
+        drawFight(g2d);
+        Color overlay = playerWon ? new Color(0f, 1f, 0f, 0.25f) : new Color(1f, 0f, 0f, 0.25f);
+        g2d.setColor(overlay);
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 96));
+        drawCenteredText(g2d, "K.O.", new Color(255, 255, 255, 180));
     }
 
     private void drawHud(Graphics2D g2d) {
@@ -386,6 +428,18 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         drawCenteredTextOffset(g2d, "Press ENTER to return to menu", Color.WHITE, 80);
     }
 
+    private void drawResultScreen(Graphics2D g2d) {
+        g2d.setColor(playerWon ? new Color(30, 80, 50) : new Color(90, 30, 30));
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 72));
+        String headline = playerWon ? "K.O.! You Win" : "K.O.! You Lose";
+        drawCenteredText(g2d, headline, Color.WHITE);
+
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 26));
+        drawCenteredTextOffset(g2d, "Press ENTER to return to menu", Color.WHITE, 60);
+    }
+
     private void drawKOOverlay(Graphics2D g2d) {
         float t = Math.min(1f, koOverlayTimer / KO_OVERLAY_DURATION);
         int size = (int) (120 + 60 * t);
@@ -483,6 +537,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         showingStageIntro = false;
         hitFlashTimer = 0f;
         koOverlayTimer = 0f;
+        postKoTimer = 0f;
+        playerWon = false;
     }
 
     @Override
@@ -500,7 +556,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 enemy = null;
                 levelTransitionTimer = 0f;
                 gameState = GameState.FIGHT;
-            } else if (gameState == GameState.GAME_OVER || gameState == GameState.VICTORY) {
+            } else if (gameState == GameState.GAME_OVER || gameState == GameState.VICTORY || gameState == GameState.RESULT_SCREEN) {
                 resetToMenu();
             } else if (gameState == GameState.LEVEL_TRANSITION) {
                 levelTransitionTimer = 0f;
