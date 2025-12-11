@@ -11,7 +11,7 @@ import javax.imageio.ImageIO;
  */
 public class PlayerFighter extends Fighter {
 
-    private static final float RENDER_SCALE = 2.0f;
+    private static final float RENDER_SCALE = 0.5f;
     private static final int COLLISION_WIDTH = 96;
     private static final int COLLISION_HEIGHT = 64;
 
@@ -19,7 +19,7 @@ public class PlayerFighter extends Fighter {
     private float dashSpeed = 900f;
     private float dashDuration = 0.15f;
     private float dashTimer = 0f;
-    private float dashCooldown = 0.5f;
+    private float dashCooldown = 2.0f;
     private float dashCooldownTimer = 0f;
 
     private SpriteAnimation idleAnimation;
@@ -75,9 +75,9 @@ public class PlayerFighter extends Fighter {
 
         idleAnimation = new SpriteAnimation(idleSheet, 8, 0.12f, true);
         runAnimation = new SpriteAnimation(runSheet, 8, 0.08f, true);
-        jumpAnimation = new SpriteAnimation(jumpSheet, 4, 0.1f, false);
-        fallAnimation = new SpriteAnimation(fallSheet, 4, 0.1f, false);
-        attack1Animation = new SpriteAnimation(attack1Sheet, 6, 0.07f, false);
+        jumpAnimation = new SpriteAnimation(jumpSheet, 2, 0.1f, false);
+        fallAnimation = new SpriteAnimation(fallSheet, 2, 0.1f, false);
+        attack1Animation = new SpriteAnimation(attack1Sheet, 6, 0.04f, false);
         attack2Animation = new SpriteAnimation(attack2Sheet, 6, 0.07f, false);
         takeHitAnimation = new SpriteAnimation(takeHitSheet, 4, 0.09f, false);
         deathAnimation = new SpriteAnimation(deathSheet, 6, 0.12f, false);
