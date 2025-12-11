@@ -11,8 +11,10 @@ import javax.imageio.ImageIO;
  */
 public class PlayerFighter extends Fighter {
 
-    private static final int SPRITE_FRAME_SIZE = 32;
-    private static final float RENDER_SCALE = 4.0f;
+    private static final int SPRITE_FRAME_WIDTH = 32;
+    private static final int SPRITE_FRAME_HEIGHT = 64;
+    private static final int SHEET_FRAME_SIZE = 96;
+    private static final float RENDER_SCALE = 3.0f;
 
     private boolean isDashing = false;
     private float dashSpeed = 900f;
@@ -31,8 +33,8 @@ public class PlayerFighter extends Fighter {
         super(
                 startX,
                 startY,
-                (int) (SPRITE_FRAME_SIZE * RENDER_SCALE),
-                (int) (SPRITE_FRAME_SIZE * RENDER_SCALE),
+                (int) (SPRITE_FRAME_WIDTH * RENDER_SCALE),
+                (int) (SPRITE_FRAME_HEIGHT * RENDER_SCALE),
                 100,
                 profile
         );
@@ -40,8 +42,8 @@ public class PlayerFighter extends Fighter {
         loadAnimations();
 
         // make sure fighter bounds match sprite size
-        this.width = (int) (SPRITE_FRAME_SIZE * RENDER_SCALE);
-        this.height = (int) (SPRITE_FRAME_SIZE * RENDER_SCALE);
+        this.width = (int) (SPRITE_FRAME_WIDTH * RENDER_SCALE);
+        this.height = (int) (SPRITE_FRAME_HEIGHT * RENDER_SCALE);
 
         this.name = profile != null ? profile.getName() : "Player 1";
         this.currentAnimation = idleAnimation;
@@ -70,10 +72,10 @@ public class PlayerFighter extends Fighter {
         BufferedImage attackSheet = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/ATTACK 1.png");
         BufferedImage hurtSheet   = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/HURT.png");
 
-        idleAnimation   = new SpriteAnimation(idleSheet,   SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 10, 0.09f, true);
-        runAnimation    = new SpriteAnimation(runSheet,    SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 16, 0.06f, true);
-        attackAnimation = new SpriteAnimation(attackSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 7, 0.06f, false);
-        hurtAnimation   = new SpriteAnimation(hurtSheet,   SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 4, 0.08f, false);
+        idleAnimation   = new SpriteAnimation(idleSheet,   SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 10, 0.09f, true);
+        runAnimation    = new SpriteAnimation(runSheet,    SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 16, 0.06f, true);
+        attackAnimation = new SpriteAnimation(attackSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 7, 0.06f, false);
+        hurtAnimation   = new SpriteAnimation(hurtSheet,   SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 4, 0.08f, false);
 
         currentAnimation = idleAnimation;
     }
@@ -156,8 +158,8 @@ public class PlayerFighter extends Fighter {
                 ? currentAnimation.getCurrentFrame()
                 : idleAnimation.getCurrentFrame();
 
-        int drawWidth = (int) (SPRITE_FRAME_SIZE * RENDER_SCALE);
-        int drawHeight = (int) (SPRITE_FRAME_SIZE * RENDER_SCALE);
+        int drawWidth = (int) (SPRITE_FRAME_WIDTH * RENDER_SCALE);
+        int drawHeight = (int) (SPRITE_FRAME_HEIGHT * RENDER_SCALE);
 
         if (facingRight) {
             g2d.drawImage(frame, (int) x, (int) y, drawWidth, drawHeight, null);
