@@ -7,6 +7,8 @@ public enum GameState {
     MENU,
     FIGHT,
     LEVEL_TRANSITION,
+    POST_KO,
+    RESULT_SCREEN,
     GAME_OVER,
     VICTORY
 }

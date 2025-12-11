@@ -1,11 +1,10 @@
 package com.tekki.core;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.Random;
 
 /**
- * Simple AI-controlled fighter.
+ * Simple AI-controlled fighter without critical-hit visual effects.
  */
 public class EnemyFighter extends Fighter {
 
@@ -164,4 +163,5 @@ public class EnemyFighter extends Fighter {
         speedX = player.getCenterX() >= getCenterX() ? dashSpeed : -dashSpeed;
         state = FighterState.DASHING;
     }
+
 }

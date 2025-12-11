@@ -24,6 +24,7 @@ public class PlayerFighter extends Fighter {
     private float dashTimer = 0f;
     private float dashCooldown = 0.5f;
     private float dashCooldownTimer = 0f;
+    private boolean hasAirDashAvailable = true;
 
     private SpriteAnimation idleAnimation;
     private SpriteAnimation runAnimation;
@@ -33,6 +34,7 @@ public class PlayerFighter extends Fighter {
     private SpriteAnimation attack2Animation;
     private SpriteAnimation takeHitAnimation;
     private SpriteAnimation deathAnimation;
+    private SpriteAnimation criticalHitEffect;
     private SpriteAnimation currentAnimation;
     private SpriteAnimation activeAttackAnimation;
     private boolean useFirstAttackNext = true;
@@ -77,6 +79,7 @@ public class PlayerFighter extends Fighter {
         BufferedImage attack2Sheet = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/Attack2.png");
         BufferedImage takeHitSheet = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/Take Hit.png");
         BufferedImage deathSheet   = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/Death.png");
+        BufferedImage critSheet    = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/Take Hit - white silhouette.png");
 
         idleAnimation = new SpriteAnimation(idleSheet, 8, 0.12f, true);
         runAnimation = new SpriteAnimation(runSheet, 8, 0.08f, true);
@@ -86,12 +89,16 @@ public class PlayerFighter extends Fighter {
         attack2Animation = new SpriteAnimation(attack2Sheet, 6, 0.07f, false);
         takeHitAnimation = new SpriteAnimation(takeHitSheet, 4, 0.09f, false);
         deathAnimation = new SpriteAnimation(deathSheet, 6, 0.12f, false);
+        criticalHitEffect = new SpriteAnimation(critSheet, 4, 0.05f, true);
 
         currentAnimation = idleAnimation;
     }
 
     public void startDash() {
-        if (!onGround || state == FighterState.DEFENDING || state == FighterState.DASHING || state == FighterState.KO || state == FighterState.HIT || dashCooldownTimer > 0f) {
+        if (state == FighterState.DEFENDING || state == FighterState.DASHING || state == FighterState.KO || state == FighterState.HIT || dashCooldownTimer > 0f) {
+            return;
+        }
+        if (!onGround && !hasAirDashAvailable) {
             return;
         }
         isDashing = true;
@@ -99,6 +106,9 @@ public class PlayerFighter extends Fighter {
         dashCooldownTimer = 0f;
         speedX = facingRight ? dashSpeed : -dashSpeed;
         state = FighterState.DASHING;
+        if (!onGround) {
+            hasAirDashAvailable = false;
+        }
     }
 
     public void startDefending() {
@@ -126,6 +136,8 @@ public class PlayerFighter extends Fighter {
     public void update(float deltaTime) {
         if (state == FighterState.KO) {
             updateCurrentAnimation(deltaTime);
+            updateCriticalEffect(deltaTime);
+            updateCriticalEffectAnimation(deltaTime);
             return;
         }
 
@@ -147,6 +159,7 @@ public class PlayerFighter extends Fighter {
 
         super.update(deltaTime);
         updateCurrentAnimation(deltaTime);
+        updateCriticalEffectAnimation(deltaTime);
     }
 
     private void updateCurrentAnimation(float deltaTime) {
@@ -196,6 +209,20 @@ public class PlayerFighter extends Fighter {
         } else {
             g2d.drawImage(frame, drawX + drawWidth, drawY, -drawWidth, drawHeight, null);
         }
+
+        if (isCriticalEffectActive() && criticalHitEffect != null) {
+            BufferedImage critFrame = criticalHitEffect.getCurrentFrame();
+            int critDrawWidth = (int) (critFrame.getWidth() * RENDER_SCALE);
+            int critDrawHeight = (int) (critFrame.getHeight() * RENDER_SCALE);
+            int critDrawY = drawY;
+            int critDrawX = drawX;
+
+            if (facingRight) {
+                g2d.drawImage(critFrame, critDrawX, critDrawY, critDrawWidth, critDrawHeight, null);
+            } else {
+                g2d.drawImage(critFrame, critDrawX + critDrawWidth, critDrawY, -critDrawWidth, critDrawHeight, null);
+            }
+        }
     }
 
     public float getDashCooldown() {
@@ -208,5 +235,32 @@ public class PlayerFighter extends Fighter {
 
     public boolean isDashReady() {
         return dashCooldownTimer <= 0f;
+    }
+
+    @Override
+    protected void onCriticalHitTriggered() {
+        if (criticalHitEffect != null) {
+            criticalHitEffect.reset();
+        }
+    }
+
+    private void updateCriticalEffectAnimation(float deltaTime) {
+        if (isCriticalEffectActive() && criticalHitEffect != null) {
+            criticalHitEffect.update(deltaTime);
+        }
+    }
+
+    @Override
+    protected void onLanding() {
+        hasAirDashAvailable = true;
+        if (isDashing) {
+            isDashing = false;
+            dashTimer = 0f;
+            dashCooldownTimer = dashCooldown;
+            speedX = 0f;
+            if (state == FighterState.DASHING) {
+                state = FighterState.IDLE;
+            }
+        }
     }
 }
