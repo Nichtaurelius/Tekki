@@ -41,6 +41,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private static final float STAGE_INTRO_DURATION = 2.0f;
     private float hitFlashTimer = 0f;
     private static final float HIT_FLASH_DURATION = 0.15f;
+    private Color hitFlashColor = Color.WHITE;
     private float koOverlayTimer = 0f;
     private static final float KO_OVERLAY_DURATION = 1.5f;
 
@@ -193,10 +194,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         Rectangle enemyBounds = enemy.getBounds();
 
         if (player.canHit() && playerHit != null && playerHit.intersects(enemyBounds)) {
-            enemy.takeDamage(10);
+            int damage = 10;
+            if (player.getState() == FighterState.DASHING) {
+                damage *= 2;
+            }
+            enemy.takeDamage(damage);
             player.markHit();
-            score += 10;
+            score += damage;
             hitFlashTimer = HIT_FLASH_DURATION;
+            hitFlashColor = new Color(180, 0, 180);
         }
 
         if (enemy.canHit() && enemyHit != null && enemyHit.intersects(playerBounds)) {
@@ -204,6 +210,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             player.takeDamage(enemyDamage);
             enemy.markHit();
             hitFlashTimer = HIT_FLASH_DURATION;
+            hitFlashColor = Color.WHITE;
         }
 
         if (gameState == GameState.FIGHT) {
@@ -331,7 +338,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private void drawHitFlash(Graphics2D g2d) {
         float alpha = Math.min(1f, hitFlashTimer / HIT_FLASH_DURATION);
-        Color flash = new Color(1f, 1f, 1f, 0.35f * alpha);
+        float flashAlpha = 0.35f * alpha;
+        float r = hitFlashColor.getRed() / 255f;
+        float g = hitFlashColor.getGreen() / 255f;
+        float b = hitFlashColor.getBlue() / 255f;
+        Color flash = new Color(r, g, b, flashAlpha);
         g2d.setColor(flash);
         g2d.fillRect(0, 0, getWidth(), getHeight());
     }
@@ -426,7 +437,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void initLevels() {
         levels.clear();
         levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false, 10));
-        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 2.0f, 2.2f, true, 15));
+        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 2.0f, 2.2f, true, 20));
     }
 
     private void startLevel(int levelIndex) {

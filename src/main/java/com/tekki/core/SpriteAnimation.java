@@ -24,7 +24,7 @@ public class SpriteAnimation {
         this.time = 0f;
         this.currentFrame = 0;
 
-        int offsetX = (sheetFrameWidth - innerFrameWidth) / 2;
+        int offsetX = 0;
         int offsetY = (sheetFrameHeight - innerFrameHeight) / 2;
 
         for (int i = 0; i < frameCount; i++) {
