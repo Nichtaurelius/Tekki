@@ -1,9 +1,9 @@
 package com.tekki.core;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.Objects;
 import javax.imageio.ImageIO;
 
 /**
@@ -37,19 +37,40 @@ public class PlayerFighter extends Fighter {
     }
 
     private void loadAnimations() {
-        try {
-            BufferedImage idleSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/sprites/player/IDLE.png")));
-            BufferedImage runSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/sprites/player/RUN.png")));
-            BufferedImage attackSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/sprites/player/ATTACK 1.png")));
-            BufferedImage hurtSheet = ImageIO.read(Objects.requireNonNull(getClass().getResource("/sprites/player/HURT.png")));
+        BufferedImage idleSheet = loadSpriteSheet("/sprites/player/IDLE.png", 10, new Color(0, 200, 255, 160));
+        BufferedImage runSheet = loadSpriteSheet("/sprites/player/RUN.png", 16, new Color(0, 255, 0, 160));
+        BufferedImage attackSheet = loadSpriteSheet("/sprites/player/ATTACK 1.png", 7, new Color(255, 150, 0, 160));
+        BufferedImage hurtSheet = loadSpriteSheet("/sprites/player/HURT.png", 4, new Color(255, 0, 0, 160));
 
-            idleAnimation = new SpriteAnimation(idleSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 10, 0.09f, true);
-            runAnimation = new SpriteAnimation(runSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 16, 0.06f, true);
-            attackAnimation = new SpriteAnimation(attackSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 7, 0.06f, false);
-            hurtAnimation = new SpriteAnimation(hurtSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 4, 0.08f, false);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load player animations", e);
+        idleAnimation = new SpriteAnimation(idleSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 10, 0.09f, true);
+        runAnimation = new SpriteAnimation(runSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 16, 0.06f, true);
+        attackAnimation = new SpriteAnimation(attackSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 7, 0.06f, false);
+        hurtAnimation = new SpriteAnimation(hurtSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 4, 0.08f, false);
+    }
+
+    private BufferedImage loadSpriteSheet(String path, int frameCount, Color placeholderColor) {
+        try (var resourceStream = getClass().getResourceAsStream(path)) {
+            if (resourceStream != null) {
+                return ImageIO.read(resourceStream);
+            }
+        } catch (IOException ignored) {
+            // Fall through to placeholder creation.
         }
+
+        BufferedImage placeholder = new BufferedImage(SPRITE_FRAME_SIZE * frameCount, SPRITE_FRAME_SIZE, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = placeholder.createGraphics();
+        try {
+            g2d.setColor(placeholderColor);
+            g2d.fillRect(0, 0, placeholder.getWidth(), placeholder.getHeight());
+            g2d.setColor(placeholderColor.darker());
+            for (int i = 0; i < frameCount; i++) {
+                int xOffset = i * SPRITE_FRAME_SIZE;
+                g2d.drawRect(xOffset, 0, SPRITE_FRAME_SIZE - 1, SPRITE_FRAME_SIZE - 1);
+            }
+        } finally {
+            g2d.dispose();
+        }
+        return placeholder;
     }
 
     public void startDash() {
