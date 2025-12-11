@@ -11,18 +11,18 @@ import javax.imageio.ImageIO;
  */
 public class PlayerFighter extends Fighter {
 
-    private static final float RENDER_SCALE = 0.5f;
+    private static final float RENDER_SCALE = 2.5f;
     private static final int COLLISION_WIDTH = 96;
     private static final int COLLISION_HEIGHT = 64;
     private static final int AVATAR_VISUAL_HEIGHT = 110;
     private static final int AVATAR_VISUAL_WIDTH = 50;
-    private static final int AVATAR_FOOT_OFFSET_FROM_BOTTOM = 45;
+    private static final int AVATAR_FOOT_OFFSET_FROM_BOTTOM = 78;
 
     private boolean isDashing = false;
     private float dashSpeed = 900f;
     private float dashDuration = 0.15f;
     private float dashTimer = 0f;
-    private float dashCooldown = 2.0f;
+    private float dashCooldown = 0.5f;
     private float dashCooldownTimer = 0f;
 
     private SpriteAnimation idleAnimation;
