@@ -66,7 +66,11 @@ public abstract class Fighter {
             hitStunTimer -= deltaTime;
             if (hitStunTimer <= 0f) {
                 hitStunTimer = 0f;
-                state = Math.abs(speedX) > 0.01f ? FighterState.WALKING : FighterState.IDLE;
+                if (!onGround) {
+                    state = FighterState.JUMPING;
+                } else {
+                    state = Math.abs(speedX) > 0.01f ? FighterState.WALKING : FighterState.IDLE;
+                }
             }
         }
 
@@ -84,7 +88,7 @@ public abstract class Fighter {
             yVelocity = 0f;
             if (!onGround) {
                 onGround = true;
-                if (state == FighterState.JUMPING || state == FighterState.DASHING) {
+                if (state != FighterState.HIT && state != FighterState.KO && (state == FighterState.JUMPING || state == FighterState.DASHING)) {
                     state = Math.abs(speedX) > 0.01f ? FighterState.WALKING : FighterState.IDLE;
                 }
             }
@@ -111,7 +115,7 @@ public abstract class Fighter {
      * Move fighter left by setting horizontal velocity and state.
      */
     public void moveLeft() {
-        if (state == FighterState.DEFENDING || state == FighterState.DASHING) {
+        if (state == FighterState.KO || state == FighterState.HIT || state == FighterState.DEFENDING || state == FighterState.DASHING) {
             return;
         }
         speedX = -450f;
@@ -125,7 +129,7 @@ public abstract class Fighter {
      * Move fighter right by setting horizontal velocity and state.
      */
     public void moveRight() {
-        if (state == FighterState.DEFENDING || state == FighterState.DASHING) {
+        if (state == FighterState.KO || state == FighterState.HIT || state == FighterState.DEFENDING || state == FighterState.DASHING) {
             return;
         }
         speedX = 450f;
@@ -139,6 +143,9 @@ public abstract class Fighter {
      * Stop horizontal movement.
      */
     public void stopMoving() {
+        if (state == FighterState.KO || state == FighterState.HIT) {
+            return;
+        }
         if (state == FighterState.DASHING) {
             return;
         }
@@ -177,7 +184,7 @@ public abstract class Fighter {
      * Begin defending; cancels movement and attack animation.
      */
     public void startDefending() {
-        if (!onGround || state == FighterState.DASHING || state == FighterState.JUMPING) {
+        if (!onGround || state == FighterState.DASHING || state == FighterState.JUMPING || state == FighterState.KO || state == FighterState.HIT) {
             return;
         }
         speedX = 0f;
@@ -189,6 +196,9 @@ public abstract class Fighter {
      * Stop defending; return to idle or walking depending on movement.
      */
     public void stopDefending() {
+        if (state == FighterState.KO || state == FighterState.HIT) {
+            return;
+        }
         if (state == FighterState.DEFENDING) {
             state = speedX != 0 ? FighterState.WALKING : FighterState.IDLE;
         }
@@ -198,7 +208,7 @@ public abstract class Fighter {
      * Attempt to jump if on the ground.
      */
     public void jump() {
-        if (!onGround || state == FighterState.DEFENDING || state == FighterState.DASHING) {
+        if (!onGround || state == FighterState.DEFENDING || state == FighterState.DASHING || state == FighterState.KO || state == FighterState.HIT) {
             return;
         }
         yVelocity = jumpStrength;

@@ -91,7 +91,7 @@ public class PlayerFighter extends Fighter {
     }
 
     public void startDash() {
-        if (!onGround || state == FighterState.DEFENDING || state == FighterState.DASHING || dashCooldownTimer > 0f) {
+        if (!onGround || state == FighterState.DEFENDING || state == FighterState.DASHING || state == FighterState.KO || state == FighterState.HIT || dashCooldownTimer > 0f) {
             return;
         }
         isDashing = true;
@@ -124,6 +124,11 @@ public class PlayerFighter extends Fighter {
 
     @Override
     public void update(float deltaTime) {
+        if (state == FighterState.KO) {
+            updateCurrentAnimation(deltaTime);
+            return;
+        }
+
         if (dashCooldownTimer > 0f) {
             dashCooldownTimer -= deltaTime;
         }
