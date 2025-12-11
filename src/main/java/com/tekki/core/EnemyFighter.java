@@ -8,7 +8,7 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 /**
- * Simple AI-controlled fighter.
+ * Simple AI-controlled fighter without critical-hit visual effects.
  */
 public class EnemyFighter extends Fighter {
 
