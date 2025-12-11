@@ -28,6 +28,7 @@ public abstract class Fighter {
     protected float groundY = 380f;
 
     protected String name = "Fighter";
+    protected CharacterProfile profile;
 
     private float attackTimer = 0f;
     private final float attackDuration = 0.25f;
@@ -38,13 +39,17 @@ public abstract class Fighter {
     protected float hitStunDuration = 0.35f;
     protected float hitStunTimer = 0f;
 
-    protected Fighter(float x, float y, int width, int height, int maxHealth) {
+    protected Fighter(float x, float y, int width, int height, int maxHealth, CharacterProfile profile) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.maxHealth = maxHealth;
         this.health = maxHealth;
+        this.profile = profile;
+        if (profile != null) {
+            this.name = profile.getName();
+        }
     }
 
     /**
@@ -259,16 +264,31 @@ public abstract class Fighter {
      * Utility to choose a simple color based on state.
      */
     protected Color colorForState() {
+        Color base = profile != null ? profile.getBaseColor() : new Color(60, 120, 255);
         return switch (state) {
-            case IDLE -> new Color(60, 120, 255);
-            case WALKING -> new Color(60, 200, 120);
-            case ATTACKING -> new Color(200, 60, 60);
-            case DEFENDING -> new Color(230, 210, 60);
-            case JUMPING -> new Color(120, 120, 255);
-            case DASHING -> new Color(255, 120, 200);
-            case HIT -> new Color(255, 180, 60);
+            case IDLE -> base;
+            case WALKING -> adjustBrightness(base, 1.2f);
+            case ATTACKING -> adjustTint(base, new Color(200, 60, 60));
+            case DEFENDING -> adjustBrightness(base, 1.1f);
+            case JUMPING -> adjustBrightness(base, 1.15f);
+            case DASHING -> adjustTint(base, new Color(255, 120, 200));
+            case HIT -> adjustTint(base, new Color(255, 180, 60));
             case KO -> Color.GRAY;
         };
+    }
+
+    private Color adjustBrightness(Color color, float factor) {
+        int r = Math.min(255, Math.round(color.getRed() * factor));
+        int g = Math.min(255, Math.round(color.getGreen() * factor));
+        int b = Math.min(255, Math.round(color.getBlue() * factor));
+        return new Color(r, g, b);
+    }
+
+    private Color adjustTint(Color base, Color tint) {
+        int r = Math.min(255, (base.getRed() + tint.getRed()) / 2);
+        int g = Math.min(255, (base.getGreen() + tint.getGreen()) / 2);
+        int b = Math.min(255, (base.getBlue() + tint.getBlue()) / 2);
+        return new Color(r, g, b);
     }
 
     public FighterState getState() {
@@ -280,6 +300,10 @@ public abstract class Fighter {
     }
 
     public String getName() {
-        return name;
+        return profile != null ? profile.getName() : name;
+    }
+
+    public CharacterProfile getProfile() {
+        return profile;
     }
 }

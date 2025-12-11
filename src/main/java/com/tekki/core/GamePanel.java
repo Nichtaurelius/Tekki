@@ -35,6 +35,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private int currentLevelIndex = 0;
     private Level currentLevel;
     private float levelTransitionTimer = 0f;
+    private float stageIntroTimer = 0f;
+    private boolean showingStageIntro = false;
+    private static final float STAGE_INTRO_DURATION = 2.0f;
+    private float hitFlashTimer = 0f;
+    private static final float HIT_FLASH_DURATION = 0.15f;
+    private float koOverlayTimer = 0f;
+    private static final float KO_OVERLAY_DURATION = 1.5f;
 
     private PlayerFighter player;
     private EnemyFighter enemy;
@@ -97,6 +104,26 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void updateGame(float deltaTime) {
+        if (hitFlashTimer > 0f) {
+            hitFlashTimer -= deltaTime;
+            if (hitFlashTimer < 0f) {
+                hitFlashTimer = 0f;
+            }
+        }
+        if (koOverlayTimer > 0f) {
+            koOverlayTimer -= deltaTime;
+            if (koOverlayTimer < 0f) {
+                koOverlayTimer = 0f;
+            }
+        }
+        if (showingStageIntro && gameState == GameState.FIGHT) {
+            stageIntroTimer -= deltaTime;
+            if (stageIntroTimer <= 0f) {
+                showingStageIntro = false;
+                stageIntroTimer = 0f;
+            }
+        }
+
         if (gameState == GameState.FIGHT) {
             if (player == null || enemy == null) {
                 startLevel(currentLevelIndex);
@@ -168,15 +195,19 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             enemy.takeDamage(10);
             player.markHit();
             score += 10;
+            hitFlashTimer = HIT_FLASH_DURATION;
         }
 
         if (enemy.canHit() && enemyHit != null && enemyHit.intersects(playerBounds)) {
-            player.takeDamage(10);
+            int enemyDamage = currentLevel != null ? currentLevel.getEnemyDamage() : 10;
+            player.takeDamage(enemyDamage);
             enemy.markHit();
+            hitFlashTimer = HIT_FLASH_DURATION;
         }
 
         if (gameState == GameState.FIGHT) {
             if (enemy.isKO()) {
+                koOverlayTimer = KO_OVERLAY_DURATION;
                 if (currentLevelIndex + 1 < levels.size()) {
                     gameState = GameState.LEVEL_TRANSITION;
                     levelTransitionTimer = 2.0f;
@@ -184,6 +215,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                     gameState = GameState.VICTORY;
                 }
             } else if (player.isKO()) {
+                koOverlayTimer = KO_OVERLAY_DURATION;
                 gameState = GameState.GAME_OVER;
             }
         }
@@ -220,7 +252,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             enemy.render(g2d);
         }
 
+        if (showingStageIntro && currentLevel != null) {
+            drawStageIntro(g2d);
+        }
+
         drawHud(g2d);
+
+        if (hitFlashTimer > 0f) {
+            drawHitFlash(g2d);
+        }
     }
 
     private void drawHud(Graphics2D g2d) {
@@ -260,6 +300,23 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
     }
 
+    private void drawStageIntro(Graphics2D g2d) {
+        float alpha = Math.min(1f, stageIntroTimer / STAGE_INTRO_DURATION);
+        Color overlay = new Color(0f, 0f, 0f, 0.5f * alpha);
+        g2d.setColor(overlay);
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+        String label = "Stage " + (currentLevelIndex + 1) + "/" + levels.size() + " - " + currentLevel.getName();
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 42));
+        drawCenteredText(g2d, label, Color.WHITE);
+    }
+
+    private void drawHitFlash(Graphics2D g2d) {
+        float alpha = Math.min(1f, hitFlashTimer / HIT_FLASH_DURATION);
+        Color flash = new Color(1f, 1f, 1f, 0.35f * alpha);
+        g2d.setColor(flash);
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+    }
+
     private void drawLevelTransition(Graphics2D g2d) {
         g2d.setColor(new Color(60, 60, 30));
         g2d.fillRect(0, 0, getWidth(), getHeight());
@@ -276,6 +333,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
         g2d.setFont(new Font("SansSerif", Font.BOLD, 64));
+        if (koOverlayTimer > 0f) {
+            drawKOOverlay(g2d);
+        }
         drawCenteredText(g2d, "YOU LOSE", Color.WHITE);
         g2d.setFont(new Font("SansSerif", Font.PLAIN, 24));
         drawCenteredTextOffset(g2d, "Final Score: " + score, Color.LIGHT_GRAY, 40);
@@ -287,10 +347,20 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
         g2d.setFont(new Font("SansSerif", Font.BOLD, 64));
+        if (koOverlayTimer > 0f) {
+            drawKOOverlay(g2d);
+        }
         drawCenteredText(g2d, "YOU WIN", Color.WHITE);
         g2d.setFont(new Font("SansSerif", Font.PLAIN, 24));
         drawCenteredTextOffset(g2d, "Final Score: " + score, Color.LIGHT_GRAY, 40);
         drawCenteredTextOffset(g2d, "Press ENTER to return to menu", Color.WHITE, 80);
+    }
+
+    private void drawKOOverlay(Graphics2D g2d) {
+        float t = Math.min(1f, koOverlayTimer / KO_OVERLAY_DURATION);
+        int size = (int) (120 + 60 * t);
+        g2d.setFont(new Font("SansSerif", Font.BOLD, size));
+        drawCenteredText(g2d, "KO", new Color(255, 180, 80));
     }
 
     private void drawCenteredText(Graphics2D g2d, String text, Color color) {
@@ -329,21 +399,27 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private void initLevels() {
         levels.clear();
-        levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false));
-        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 1.3f, 1.5f, true));
+        levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false, 10));
+        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 2.0f, 2.2f, true, 15));
     }
 
     private void startLevel(int levelIndex) {
         currentLevelIndex = levelIndex;
         currentLevel = levels.get(currentLevelIndex);
-        player = new PlayerFighter(120f, PANEL_HEIGHT - 180f);
+        CharacterProfile playerProfile = new CharacterProfile("Player 1", new Color(70, 140, 255), null);
+        CharacterProfile enemyProfile = currentLevelIndex == 0
+                ? new CharacterProfile("CPU Dojo", new Color(210, 100, 190), null)
+                : new CharacterProfile("CPU Rooftop", new Color(240, 120, 80), null);
+        player = new PlayerFighter(120f, PANEL_HEIGHT - 180f, playerProfile);
         enemy = new EnemyFighter(PANEL_WIDTH - 220f, PANEL_HEIGHT - 180f, currentLevel.getEnemySpeedMultiplier(),
-                currentLevel.getEnemyAggression(), currentLevel.isEnemyDashesMore());
+                currentLevel.getEnemyAggression(), currentLevel.isEnemyDashesMore(), enemyProfile);
         leftPressed = false;
         rightPressed = false;
         attackPressed = false;
         defendPressed = false;
         jumpPressed = false;
+        showingStageIntro = true;
+        stageIntroTimer = STAGE_INTRO_DURATION;
     }
 
     private void resetToMenu() {
@@ -359,6 +435,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         currentLevelIndex = 0;
         currentLevel = levels.get(0);
         levelTransitionTimer = 0f;
+        stageIntroTimer = 0f;
+        showingStageIntro = false;
+        hitFlashTimer = 0f;
+        koOverlayTimer = 0f;
     }
 
     @Override
@@ -378,48 +458,53 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 gameState = GameState.FIGHT;
             } else if (gameState == GameState.GAME_OVER || gameState == GameState.VICTORY) {
                 resetToMenu();
+            } else if (gameState == GameState.LEVEL_TRANSITION) {
+                levelTransitionTimer = 0f;
             }
         }
 
-        if (gameState == GameState.FIGHT) {
-            if (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT) {
-                leftPressed = true;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                rightPressed = true;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_J) {
-                attackPressed = true;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_K) {
-                defendPressed = true;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP) {
-                jumpPressed = true;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
-                if (player != null) {
-                    player.startDash();
-                }
+        if (gameState != GameState.FIGHT) {
+            return;
+        }
+
+        if (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT) {
+            leftPressed = true;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_RIGHT) {
+            rightPressed = true;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_J) {
+            attackPressed = true;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_K) {
+            defendPressed = true;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP) {
+            jumpPressed = true;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
+            if (player != null) {
+                player.startDash();
             }
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        if (gameState == GameState.FIGHT) {
-            if (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT) {
-                leftPressed = false;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                rightPressed = false;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_K) {
-                defendPressed = false;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP) {
-                jumpPressed = false;
-            }
+        if (gameState != GameState.FIGHT) {
+            return;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT) {
+            leftPressed = false;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_RIGHT) {
+            rightPressed = false;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_K) {
+            defendPressed = false;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP) {
+            jumpPressed = false;
         }
     }
 }

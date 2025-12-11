@@ -13,15 +13,17 @@ public class Level {
     private final float enemySpeedMultiplier;
     private final float enemyAggression;
     private final boolean enemyDashesMore;
+    private final int enemyDamage;
 
     public Level(String name, Color backgroundColor, Color floorColor, float enemySpeedMultiplier, float enemyAggression,
-                 boolean enemyDashesMore) {
+                 boolean enemyDashesMore, int enemyDamage) {
         this.name = name;
         this.backgroundColor = backgroundColor;
         this.floorColor = floorColor;
         this.enemySpeedMultiplier = enemySpeedMultiplier;
         this.enemyAggression = enemyAggression;
         this.enemyDashesMore = enemyDashesMore;
+        this.enemyDamage = enemyDamage;
     }
 
     public String getName() {
@@ -46,5 +48,9 @@ public class Level {
 
     public boolean isEnemyDashesMore() {
         return enemyDashesMore;
+    }
+
+    public int getEnemyDamage() {
+        return enemyDamage;
     }
 }

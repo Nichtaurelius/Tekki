@@ -14,9 +14,9 @@ public class PlayerFighter extends Fighter {
     private float dashCooldown = 0.5f;
     private float dashCooldownTimer = 0f;
 
-    public PlayerFighter(float startX, float startY) {
-        super(startX, startY, 50, 100, 100);
-        this.name = "Player 1";
+    public PlayerFighter(float startX, float startY, CharacterProfile profile) {
+        super(startX, startY, 50, 100, 100, profile);
+        this.name = profile != null ? profile.getName() : "Player 1";
     }
 
     public void startDash() {
