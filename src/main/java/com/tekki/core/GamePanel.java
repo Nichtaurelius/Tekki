@@ -24,6 +24,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private static final int PANEL_WIDTH = 960;
     private static final int PANEL_HEIGHT = 540;
     private static final int TARGET_FPS = 60;
+    private static final int FLOOR_HEIGHT = 60;
 
     private final Timer gameTimer;
     private long frameCounter = 0;
@@ -40,6 +41,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private static final float STAGE_INTRO_DURATION = 2.0f;
     private float hitFlashTimer = 0f;
     private static final float HIT_FLASH_DURATION = 0.15f;
+    private Color hitFlashColor = Color.WHITE;
     private float koOverlayTimer = 0f;
     private static final float KO_OVERLAY_DURATION = 1.5f;
 
@@ -192,10 +194,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         Rectangle enemyBounds = enemy.getBounds();
 
         if (player.canHit() && playerHit != null && playerHit.intersects(enemyBounds)) {
-            enemy.takeDamage(10);
+            int damage = 10;
+            if (player.getState() == FighterState.DASHING) {
+                damage *= 2;
+            }
+            enemy.takeDamage(damage);
             player.markHit();
-            score += 10;
+            score += damage;
             hitFlashTimer = HIT_FLASH_DURATION;
+            hitFlashColor = new Color(180, 0, 180);
         }
 
         if (enemy.canHit() && enemyHit != null && enemyHit.intersects(playerBounds)) {
@@ -203,6 +210,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             player.takeDamage(enemyDamage);
             enemy.markHit();
             hitFlashTimer = HIT_FLASH_DURATION;
+            hitFlashColor = Color.WHITE;
         }
 
         if (gameState == GameState.FIGHT) {
@@ -248,7 +256,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
         g2d.setColor(floor);
-        g2d.fillRect(0, (int) (PANEL_HEIGHT - 60), getWidth(), 60);
+        int floorTopY = PANEL_HEIGHT - FLOOR_HEIGHT;
+        g2d.fillRect(0, floorTopY, getWidth(), FLOOR_HEIGHT);
 
         if (player != null) {
             player.render(g2d);
@@ -329,7 +338,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private void drawHitFlash(Graphics2D g2d) {
         float alpha = Math.min(1f, hitFlashTimer / HIT_FLASH_DURATION);
-        Color flash = new Color(1f, 1f, 1f, 0.35f * alpha);
+        float flashAlpha = 0.35f * alpha;
+        float r = hitFlashColor.getRed() / 255f;
+        float g = hitFlashColor.getGreen() / 255f;
+        float b = hitFlashColor.getBlue() / 255f;
+        Color flash = new Color(r, g, b, flashAlpha);
         g2d.setColor(flash);
         g2d.fillRect(0, 0, getWidth(), getHeight());
     }
@@ -424,7 +437,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void initLevels() {
         levels.clear();
         levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false, 10));
-        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 2.0f, 2.2f, true, 15));
+        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 2.0f, 2.2f, true, 20));
     }
 
     private void startLevel(int levelIndex) {
@@ -434,9 +447,16 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         CharacterProfile enemyProfile = currentLevelIndex == 0
                 ? new CharacterProfile("CPU Dojo", new Color(210, 100, 190), null)
                 : new CharacterProfile("CPU Rooftop", new Color(240, 120, 80), null);
-        player = new PlayerFighter(120f, PANEL_HEIGHT - 180f, playerProfile);
-        enemy = new EnemyFighter(PANEL_WIDTH - 220f, PANEL_HEIGHT - 180f, currentLevel.getEnemySpeedMultiplier(),
+        float floorTopY = PANEL_HEIGHT - FLOOR_HEIGHT;
+
+        player = new PlayerFighter(120f, 0f, playerProfile);
+        player.setGroundFromFloorTop(floorTopY);
+        player.snapToGround();
+
+        enemy = new EnemyFighter(PANEL_WIDTH - 220f, 0f, currentLevel.getEnemySpeedMultiplier(),
                 currentLevel.getEnemyAggression(), currentLevel.isEnemyDashesMore(), enemyProfile);
+        enemy.setGroundFromFloorTop(floorTopY);
+        enemy.snapToGround();
         leftPressed = false;
         rightPressed = false;
         attackPressed = false;
