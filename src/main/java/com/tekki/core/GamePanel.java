@@ -13,6 +13,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -47,6 +48,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private PlayerFighter player;
     private EnemyFighter enemy;
+
+    private final Random random = new Random();
 
     private boolean leftPressed;
     private boolean rightPressed;
@@ -198,6 +201,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             if (player.getState() == FighterState.DASHING) {
                 damage *= 2;
             }
+            if (isCriticalHit()) {
+                damage *= 2;
+                enemy.triggerCriticalHitEffect();
+            }
             enemy.takeDamage(damage);
             player.markHit();
             score += damage;
@@ -207,6 +214,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         if (enemy.canHit() && enemyHit != null && enemyHit.intersects(playerBounds)) {
             int enemyDamage = currentLevel != null ? currentLevel.getEnemyDamage() : 10;
+            if (isCriticalHit()) {
+                enemyDamage *= 2;
+                player.triggerCriticalHitEffect();
+            }
             player.takeDamage(enemyDamage);
             enemy.markHit();
             hitFlashTimer = HIT_FLASH_DURATION;
@@ -227,6 +238,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 gameState = GameState.GAME_OVER;
             }
         }
+    }
+
+    private boolean isCriticalHit() {
+        return random.nextInt(5) == 0;
     }
 
     private void drawMenu(Graphics2D g2d) {

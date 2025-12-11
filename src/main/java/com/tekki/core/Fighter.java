@@ -21,9 +21,14 @@ public abstract class Fighter {
 
     protected boolean hasHitDuringCurrentAttack = false;
 
+    private boolean criticalEffectActive = false;
+    private float critEffectTimer = 0f;
+    private final float critEffectDuration = 0.3f;
+
     protected float yVelocity = 0f;
-    protected float gravity = 1500f;
-    protected float jumpStrength = -650f;
+    protected float gravity = 4800f;
+    protected float jumpStrength = -1300f;
+    protected float maxFallSpeed = 3000f;
     protected boolean onGround = false;
     protected float groundY = 380f;
 
@@ -56,6 +61,7 @@ public abstract class Fighter {
      * Update position and timers for this fighter.
      */
     public void update(float deltaTime) {
+        updateCriticalEffect(deltaTime);
         if (state == FighterState.KO) {
             speedX = 0f;
             return;
@@ -82,12 +88,16 @@ public abstract class Fighter {
     private void applyVerticalMovement(float deltaTime) {
         y += yVelocity * deltaTime;
         yVelocity += gravity * deltaTime;
+        if (yVelocity > maxFallSpeed) {
+            yVelocity = maxFallSpeed;
+        }
 
         if (y >= groundY) {
             y = groundY;
             yVelocity = 0f;
             if (!onGround) {
                 onGround = true;
+                onLanding();
                 if (state != FighterState.HIT && state != FighterState.KO && (state == FighterState.JUMPING || state == FighterState.DASHING)) {
                     state = Math.abs(speedX) > 0.01f ? FighterState.WALKING : FighterState.IDLE;
                 }
@@ -271,6 +281,32 @@ public abstract class Fighter {
 
     public boolean isKO() {
         return state == FighterState.KO || health <= 0;
+    }
+
+    public void triggerCriticalHitEffect() {
+        criticalEffectActive = true;
+        critEffectTimer = critEffectDuration;
+        onCriticalHitTriggered();
+    }
+
+    public boolean isCriticalEffectActive() {
+        return criticalEffectActive;
+    }
+
+    protected void onCriticalHitTriggered() {
+    }
+
+    protected void onLanding() {
+    }
+
+    protected void updateCriticalEffect(float deltaTime) {
+        if (critEffectTimer > 0f) {
+            critEffectTimer -= deltaTime;
+            if (critEffectTimer <= 0f) {
+                critEffectTimer = 0f;
+                criticalEffectActive = false;
+            }
+        }
     }
 
     /**
