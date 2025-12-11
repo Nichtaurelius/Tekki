@@ -251,6 +251,14 @@ public abstract class Fighter {
         return maxHealth;
     }
 
+    public int getHeight() {
+        return height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
     public boolean isKO() {
         return state == FighterState.KO || health <= 0;
     }
@@ -305,5 +313,15 @@ public abstract class Fighter {
 
     public CharacterProfile getProfile() {
         return profile;
+    }
+
+    public void setGroundFromFloorTop(float floorTopY) {
+        this.groundY = floorTopY - height;
+    }
+
+    public void snapToGround() {
+        this.y = groundY;
+        this.yVelocity = 0f;
+        this.onGround = true;
     }
 }

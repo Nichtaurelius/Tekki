@@ -24,6 +24,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private static final int PANEL_WIDTH = 960;
     private static final int PANEL_HEIGHT = 540;
     private static final int TARGET_FPS = 60;
+    private static final int FLOOR_HEIGHT = 60;
 
     private final Timer gameTimer;
     private long frameCounter = 0;
@@ -248,7 +249,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
         g2d.setColor(floor);
-        g2d.fillRect(0, (int) (PANEL_HEIGHT - 60), getWidth(), 60);
+        int floorTopY = PANEL_HEIGHT - FLOOR_HEIGHT;
+        g2d.fillRect(0, floorTopY, getWidth(), FLOOR_HEIGHT);
 
         if (player != null) {
             player.render(g2d);
@@ -434,9 +436,16 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         CharacterProfile enemyProfile = currentLevelIndex == 0
                 ? new CharacterProfile("CPU Dojo", new Color(210, 100, 190), null)
                 : new CharacterProfile("CPU Rooftop", new Color(240, 120, 80), null);
-        player = new PlayerFighter(120f, PANEL_HEIGHT - 180f, playerProfile);
-        enemy = new EnemyFighter(PANEL_WIDTH - 220f, PANEL_HEIGHT - 180f, currentLevel.getEnemySpeedMultiplier(),
+        float floorTopY = PANEL_HEIGHT - FLOOR_HEIGHT;
+
+        player = new PlayerFighter(120f, 0f, playerProfile);
+        player.setGroundFromFloorTop(floorTopY);
+        player.snapToGround();
+
+        enemy = new EnemyFighter(PANEL_WIDTH - 220f, 0f, currentLevel.getEnemySpeedMultiplier(),
                 currentLevel.getEnemyAggression(), currentLevel.isEnemyDashesMore(), enemyProfile);
+        enemy.setGroundFromFloorTop(floorTopY);
+        enemy.snapToGround();
         leftPressed = false;
         rightPressed = false;
         attackPressed = false;
