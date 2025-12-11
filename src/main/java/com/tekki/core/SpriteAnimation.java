@@ -10,15 +10,34 @@ public class SpriteAnimation {
     private int currentFrame;
     private final boolean looping;
 
-    public SpriteAnimation(BufferedImage spriteSheet, int frameWidth, int frameHeight, int frameCount, float frameDuration, boolean looping) {
+    public SpriteAnimation(BufferedImage spriteSheet,
+                           int sheetFrameWidth,
+                           int sheetFrameHeight,
+                           int innerFrameWidth,
+                           int innerFrameHeight,
+                           int frameCount,
+                           float frameDuration,
+                           boolean looping) {
         this.frames = new BufferedImage[frameCount];
         this.frameDuration = frameDuration;
         this.looping = looping;
         this.time = 0f;
         this.currentFrame = 0;
 
+        int offsetX = Math.max(0, (sheetFrameWidth - innerFrameWidth) / 2);
+        int offsetY = Math.max(0, (sheetFrameHeight - innerFrameHeight) / 2);
+
         for (int i = 0; i < frameCount; i++) {
-            frames[i] = spriteSheet.getSubimage(i * frameWidth, 0, frameWidth, frameHeight);
+            int blockX = i * sheetFrameWidth;
+            int blockY = 0;
+
+            int srcX = blockX + offsetX;
+            int srcY = blockY + offsetY;
+
+            int width = Math.min(innerFrameWidth, spriteSheet.getWidth() - srcX);
+            int height = Math.min(innerFrameHeight, spriteSheet.getHeight() - srcY);
+
+            frames[i] = spriteSheet.getSubimage(srcX, srcY, width, height);
         }
     }
 

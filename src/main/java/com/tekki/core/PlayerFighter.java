@@ -12,6 +12,7 @@ import javax.imageio.ImageIO;
 public class PlayerFighter extends Fighter {
 
     private static final int SPRITE_FRAME_SIZE = 32;
+    private static final int SHEET_FRAME_SIZE = 96;
     private static final float RENDER_SCALE = 4.0f;
 
     private boolean isDashing = false;
@@ -70,10 +71,10 @@ public class PlayerFighter extends Fighter {
         BufferedImage attackSheet = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/ATTACK 1.png");
         BufferedImage hurtSheet   = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/HURT.png");
 
-        idleAnimation   = new SpriteAnimation(idleSheet,   SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 10, 0.09f, true);
-        runAnimation    = new SpriteAnimation(runSheet,    SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 16, 0.06f, true);
-        attackAnimation = new SpriteAnimation(attackSheet, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 7, 0.06f, false);
-        hurtAnimation   = new SpriteAnimation(hurtSheet,   SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 4, 0.08f, false);
+        idleAnimation   = new SpriteAnimation(idleSheet,   SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 10, 0.09f, true);
+        runAnimation    = new SpriteAnimation(runSheet,    SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 16, 0.06f, true);
+        attackAnimation = new SpriteAnimation(attackSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 7, 0.06f, false);
+        hurtAnimation   = new SpriteAnimation(hurtSheet,   SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_SIZE, SPRITE_FRAME_SIZE, 4, 0.08f, false);
 
         currentAnimation = idleAnimation;
     }
