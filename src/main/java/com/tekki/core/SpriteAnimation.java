@@ -24,17 +24,14 @@ public class SpriteAnimation {
         this.time = 0f;
         this.currentFrame = 0;
 
-        int offsetX = 0;
-        int offsetY = (sheetFrameHeight - innerFrameHeight) / 2;
-
         for (int i = 0; i < frameCount; i++) {
             int blockX = i * sheetFrameWidth;
             int blockY = 0;
 
-            int srcX = blockX + offsetX;
-            int srcY = blockY + offsetY;
+            int width = sheetFrameWidth;
+            int height = sheetFrameHeight;
 
-            frames[i] = spriteSheet.getSubimage(srcX, srcY, innerFrameWidth, innerFrameHeight);
+            frames[i] = spriteSheet.getSubimage(blockX, blockY, width, height);
         }
     }
 

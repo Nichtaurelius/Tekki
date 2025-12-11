@@ -11,10 +11,12 @@ import javax.imageio.ImageIO;
  */
 public class PlayerFighter extends Fighter {
 
-    private static final int SPRITE_FRAME_WIDTH = 96;
-    private static final int SPRITE_FRAME_HEIGHT = 64;
-    private static final int SHEET_FRAME_SIZE = 96;
-    private static final float RENDER_SCALE = 1.0f;
+    private static final int SPRITE_FRAME_WIDTH = 200;
+    private static final int SPRITE_FRAME_HEIGHT = 200;
+    private static final int SHEET_FRAME_SIZE = 200;
+    private static final float RENDER_SCALE = 0.5f;
+    private static final int COLLISION_WIDTH = 96;
+    private static final int COLLISION_HEIGHT = 64;
 
     private boolean isDashing = false;
     private float dashSpeed = 900f;
@@ -25,25 +27,25 @@ public class PlayerFighter extends Fighter {
 
     private SpriteAnimation idleAnimation;
     private SpriteAnimation runAnimation;
-    private SpriteAnimation attackAnimation;
-    private SpriteAnimation hurtAnimation;
+    private SpriteAnimation jumpAnimation;
+    private SpriteAnimation fallAnimation;
+    private SpriteAnimation attack1Animation;
+    private SpriteAnimation attack2Animation;
+    private SpriteAnimation takeHitAnimation;
+    private SpriteAnimation deathAnimation;
     private SpriteAnimation currentAnimation;
 
     public PlayerFighter(float startX, float startY, CharacterProfile profile) {
         super(
                 startX,
                 startY,
-                (int) (SPRITE_FRAME_WIDTH * RENDER_SCALE),
-                (int) (SPRITE_FRAME_HEIGHT * RENDER_SCALE),
+                COLLISION_WIDTH,
+                COLLISION_HEIGHT,
                 100,
                 profile
         );
 
         loadAnimations();
-
-        // make sure fighter bounds match sprite size
-        this.width = (int) (SPRITE_FRAME_WIDTH * RENDER_SCALE);
-        this.height = (int) (SPRITE_FRAME_HEIGHT * RENDER_SCALE);
 
         this.name = profile != null ? profile.getName() : "Player 1";
         this.currentAnimation = idleAnimation;
@@ -65,17 +67,23 @@ public class PlayerFighter extends Fighter {
     }
 
     private void loadAnimations() {
-        // IMPORTANT:
-        // These paths are relative to your project root (C:\Studium\Tekki)
-        BufferedImage idleSheet   = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/IDLE.png");
-        BufferedImage runSheet    = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/RUN.png");
-        BufferedImage attackSheet = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/ATTACK 1.png");
-        BufferedImage hurtSheet   = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/HURT.png");
+        BufferedImage idleSheet    = loadSpriteFromFile("src/main/resources/sprites/player/idle.png");
+        BufferedImage runSheet     = loadSpriteFromFile("src/main/resources/sprites/player/run.png");
+        BufferedImage jumpSheet    = loadSpriteFromFile("src/main/resources/sprites/player/jump.png");
+        BufferedImage fallSheet    = loadSpriteFromFile("src/main/resources/sprites/player/fall.png");
+        BufferedImage attack1Sheet = loadSpriteFromFile("src/main/resources/sprites/player/attack1.png");
+        BufferedImage attack2Sheet = loadSpriteFromFile("src/main/resources/sprites/player/attack2.png");
+        BufferedImage takeHitSheet = loadSpriteFromFile("src/main/resources/sprites/player/take_hit.png");
+        BufferedImage deathSheet   = loadSpriteFromFile("src/main/resources/sprites/player/death.png");
 
-        idleAnimation = new SpriteAnimation(idleSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 10, 0.09f, true);
-        runAnimation = new SpriteAnimation(runSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 16, 0.06f, true);
-        attackAnimation = new SpriteAnimation(attackSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 7, 0.06f, false);
-        hurtAnimation = new SpriteAnimation(hurtSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 4, 0.08f, false);
+        idleAnimation = new SpriteAnimation(idleSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 8, 0.12f, true);
+        runAnimation = new SpriteAnimation(runSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 8, 0.08f, true);
+        jumpAnimation = new SpriteAnimation(jumpSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 4, 0.1f, false);
+        fallAnimation = new SpriteAnimation(fallSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 4, 0.1f, false);
+        attack1Animation = new SpriteAnimation(attack1Sheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 6, 0.07f, false);
+        attack2Animation = new SpriteAnimation(attack2Sheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 6, 0.07f, false);
+        takeHitAnimation = new SpriteAnimation(takeHitSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 4, 0.09f, false);
+        deathAnimation = new SpriteAnimation(deathSheet, SHEET_FRAME_SIZE, SHEET_FRAME_SIZE, SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT, 6, 0.12f, false);
 
         currentAnimation = idleAnimation;
     }
@@ -103,8 +111,8 @@ public class PlayerFighter extends Fighter {
     public void startAttack() {
         FighterState previousState = state;
         super.startAttack();
-        if (state == FighterState.ATTACKING && previousState != FighterState.ATTACKING && attackAnimation != null) {
-            attackAnimation.reset();
+        if (state == FighterState.ATTACKING && previousState != FighterState.ATTACKING && attack1Animation != null) {
+            attack1Animation.reset();
         }
     }
 
@@ -131,26 +139,25 @@ public class PlayerFighter extends Fighter {
     }
 
     private void updateCurrentAnimation(float deltaTime) {
+        SpriteAnimation nextAnimation = idleAnimation;
+
         if (state == FighterState.KO) {
-            if (currentAnimation != hurtAnimation) {
-                hurtAnimation.reset();
-            }
-            currentAnimation = hurtAnimation;
+            nextAnimation = deathAnimation;
         } else if (state == FighterState.HIT) {
-            if (currentAnimation != hurtAnimation) {
-                hurtAnimation.reset();
-            }
-            currentAnimation = hurtAnimation;
+            nextAnimation = takeHitAnimation;
         } else if (state == FighterState.ATTACKING) {
-            if (currentAnimation != attackAnimation) {
-                attackAnimation.reset();
-            }
-            currentAnimation = attackAnimation;
-        } else if (state == FighterState.WALKING || state == FighterState.DASHING || state == FighterState.JUMPING) {
-            currentAnimation = runAnimation;
-        } else {
-            currentAnimation = idleAnimation;
+            nextAnimation = attack1Animation;
+        } else if (state == FighterState.JUMPING || !onGround) {
+            nextAnimation = yVelocity < 0 ? jumpAnimation : fallAnimation;
+        } else if (state == FighterState.WALKING || state == FighterState.DASHING) {
+            nextAnimation = runAnimation;
         }
+
+        if (nextAnimation != currentAnimation && nextAnimation != null) {
+            nextAnimation.reset();
+        }
+
+        currentAnimation = nextAnimation;
 
         if (currentAnimation != null) {
             currentAnimation.update(deltaTime);
@@ -166,11 +173,13 @@ public class PlayerFighter extends Fighter {
         int drawWidth = (int) (SPRITE_FRAME_WIDTH * RENDER_SCALE);
         int drawHeight = (int) (SPRITE_FRAME_HEIGHT * RENDER_SCALE);
 
+        int drawX = (int) (x + (width - drawWidth) / 2f);
+        int drawY = (int) (y + height - drawHeight);
+
         if (facingRight) {
-            g2d.drawImage(frame, (int) x, (int) y, drawWidth, drawHeight, null);
+            g2d.drawImage(frame, drawX, drawY, drawWidth, drawHeight, null);
         } else {
-            int drawX = (int) x + drawWidth;
-            g2d.drawImage(frame, drawX, (int) y, -drawWidth, drawHeight, null);
+            g2d.drawImage(frame, drawX + drawWidth, drawY, -drawWidth, drawHeight, null);
         }
     }
 
