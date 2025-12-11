@@ -24,8 +24,8 @@ public class SpriteAnimation {
         this.time = 0f;
         this.currentFrame = 0;
 
-        int offsetX = Math.max(0, (sheetFrameWidth - innerFrameWidth) / 2);
-        int offsetY = Math.max(0, (sheetFrameHeight - innerFrameHeight) / 2);
+        int offsetX = (sheetFrameWidth - innerFrameWidth) / 2;
+        int offsetY = (sheetFrameHeight - innerFrameHeight) / 2;
 
         for (int i = 0; i < frameCount; i++) {
             int blockX = i * sheetFrameWidth;
@@ -34,10 +34,7 @@ public class SpriteAnimation {
             int srcX = blockX + offsetX;
             int srcY = blockY + offsetY;
 
-            int width = Math.min(innerFrameWidth, spriteSheet.getWidth() - srcX);
-            int height = Math.min(innerFrameHeight, spriteSheet.getHeight() - srcY);
-
-            frames[i] = spriteSheet.getSubimage(srcX, srcY, width, height);
+            frames[i] = spriteSheet.getSubimage(srcX, srcY, innerFrameWidth, innerFrameHeight);
         }
     }
 
