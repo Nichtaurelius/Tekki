@@ -11,25 +11,38 @@ public class SpriteAnimation {
     private final boolean looping;
 
     public SpriteAnimation(BufferedImage spriteSheet,
-                           int sheetFrameWidth,
-                           int sheetFrameHeight,
-                           int innerFrameWidth,
-                           int innerFrameHeight,
-                           int frameCount,
-                           float frameDuration,
-                           boolean looping) {
+                        int sheetFrameWidth,
+                        int sheetFrameHeight,
+                        int innerFrameWidth,
+                        int innerFrameHeight,
+                        int frameCount,
+                        float frameDuration,
+                        boolean looping) {
         this.frames = new BufferedImage[frameCount];
         this.frameDuration = frameDuration;
         this.looping = looping;
         this.time = 0f;
         this.currentFrame = 0;
 
+        // echte Breite/Höhe aus dem Bild ableiten
+        int sheetWidth  = spriteSheet.getWidth();
+        int sheetHeight = spriteSheet.getHeight();
+
+        // Breite eines Blocks = Gesamtbreite / Anzahl Frames
+        int blockWidth  = sheetWidth / frameCount;
+        int blockHeight = sheetHeight; // eine Zeile
+
         for (int i = 0; i < frameCount; i++) {
-            int blockX = i * sheetFrameWidth;
+            int blockX = i * blockWidth;
             int blockY = 0;
 
-            int width = sheetFrameWidth;
-            int height = sheetFrameHeight;
+            int width  = blockWidth;
+            int height = blockHeight;
+
+            // Sicherheit: nicht über den Rand schneiden
+            if (blockX + width > sheetWidth) {
+                width = sheetWidth - blockX;
+            }
 
             frames[i] = spriteSheet.getSubimage(blockX, blockY, width, height);
         }
