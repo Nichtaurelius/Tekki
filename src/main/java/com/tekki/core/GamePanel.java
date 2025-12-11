@@ -222,17 +222,22 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void drawMenu(Graphics2D g2d) {
-        String prompt = "Press ENTER to start";
-        int textWidth = g2d.getFontMetrics().stringWidth(prompt);
-        int x = (getWidth() - textWidth) / 2;
-        int y = getHeight() / 2;
+        g2d.setColor(Color.BLACK);
+        g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        if ((frameCounter / (TARGET_FPS / 2)) % 2 == 0) {
-            g2d.setColor(Color.WHITE);
-        } else {
-            g2d.setColor(new Color(200, 200, 255));
-        }
-        g2d.drawString(prompt, x, y);
+        g2d.setColor(new Color(0, 0, 0, 120));
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 72));
+        drawCenteredTextAt(g2d, "JAVA BRAWL", Color.WHITE, 150);
+
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 32));
+        String prompt = "Press ENTER to Start";
+        Color promptColor = (frameCounter / (TARGET_FPS / 2)) % 2 == 0 ? Color.WHITE : new Color(200, 200, 255);
+        drawCenteredTextAt(g2d, prompt, promptColor, 260);
+
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        drawCenteredTextAt(g2d, "© 2025 Student Project – Prototype Build", new Color(200, 200, 200), getHeight() - 30);
     }
 
     private void drawFight(Graphics2D g2d) {
@@ -266,37 +271,49 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void drawHud(Graphics2D g2d) {
         int barWidth = 300;
         int barHeight = 20;
-        int padding = 20;
+        int padding = 18;
+        int topMargin = 40;
+        int textSpacing = 18;
 
         g2d.setColor(Color.DARK_GRAY);
-        g2d.fillRect(padding, padding, barWidth, barHeight);
-        g2d.fillRect(getWidth() - barWidth - padding, padding, barWidth, barHeight);
+        g2d.fillRect(padding, topMargin, barWidth, barHeight);
+        g2d.fillRect(getWidth() - barWidth - padding, topMargin, barWidth, barHeight);
 
         if (player != null) {
             float ratio = player.getHealth() / (float) player.getMaxHealth();
             int fill = (int) (barWidth * ratio);
             g2d.setColor(new Color(80, 200, 120));
-            g2d.fillRect(padding, padding, fill, barHeight);
+            g2d.fillRect(padding, topMargin, fill, barHeight);
             g2d.setColor(Color.WHITE);
-            g2d.drawString(player.getName() + " HP: " + player.getHealth() + "/" + player.getMaxHealth(), padding, padding + barHeight + 16);
-            drawDashIndicator(g2d, padding, padding + barHeight + 32, barWidth, 12);
+            g2d.drawString(player.getName() + " HP: " + player.getHealth() + "/" + player.getMaxHealth(), padding, topMargin + barHeight + textSpacing);
         }
 
         if (enemy != null) {
             float ratio = enemy.getHealth() / (float) enemy.getMaxHealth();
             int fill = (int) (barWidth * ratio);
             g2d.setColor(new Color(200, 120, 80));
-            g2d.fillRect(getWidth() - barWidth - padding, padding, fill, barHeight);
+            g2d.fillRect(getWidth() - barWidth - padding, topMargin, fill, barHeight);
             g2d.setColor(Color.WHITE);
-            g2d.drawString(enemy.getName() + " HP: " + enemy.getHealth() + "/" + enemy.getMaxHealth(), getWidth() - barWidth - padding, padding + barHeight + 16);
+            g2d.drawString("CPU " + enemy.getName() + " HP: " + enemy.getHealth() + "/" + enemy.getMaxHealth(), getWidth() - barWidth - padding, topMargin + barHeight + textSpacing);
         }
 
         g2d.setColor(Color.WHITE);
-        g2d.drawString("Score: " + score, (getWidth() / 2) - 40, padding + barHeight + 16);
-
         if (currentLevel != null && !levels.isEmpty()) {
-            String stageLabel = "Stage: " + currentLevel.getName() + " (" + (currentLevelIndex + 1) + "/" + levels.size() + ")";
-            g2d.drawString(stageLabel, (getWidth() / 2) - 80, padding + barHeight + 36);
+            String scoreLabel = "Score: " + score;
+            int scoreWidth = g2d.getFontMetrics().stringWidth(scoreLabel);
+            int scoreX = (getWidth() - scoreWidth) / 2;
+            int scoreY = topMargin + barHeight + 10;
+            g2d.drawString(scoreLabel, scoreX, scoreY);
+
+            String stageLabel = "Stage " + (currentLevelIndex + 1) + "/" + levels.size() + " – " + currentLevel.getName();
+            int stageWidth = g2d.getFontMetrics().stringWidth(stageLabel);
+            int stageX = (getWidth() - stageWidth) / 2;
+            int stageY = scoreY + textSpacing;
+            g2d.drawString(stageLabel, stageX, stageY);
+        }
+
+        if (player != null) {
+            drawDashIndicator(g2d, padding, getHeight() - 70, barWidth / 2, 12);
         }
     }
 
@@ -367,6 +384,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         int textWidth = g2d.getFontMetrics().stringWidth(text);
         int x = (getWidth() - textWidth) / 2;
         int y = getHeight() / 2;
+        g2d.setColor(color);
+        g2d.drawString(text, x, y);
+    }
+
+    private void drawCenteredTextAt(Graphics2D g2d, String text, Color color, int y) {
+        int textWidth = g2d.getFontMetrics().stringWidth(text);
+        int x = (getWidth() - textWidth) / 2;
         g2d.setColor(color);
         g2d.drawString(text, x, y);
     }
