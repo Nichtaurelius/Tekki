@@ -1,6 +1,5 @@
 package com.tekki.core;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.Random;
 
@@ -164,4 +163,5 @@ public class EnemyFighter extends Fighter {
         speedX = player.getCenterX() >= getCenterX() ? dashSpeed : -dashSpeed;
         state = FighterState.DASHING;
     }
+
 }
