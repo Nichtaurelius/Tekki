@@ -21,8 +21,8 @@ import javax.swing.Timer;
  */
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
-    private static final int PANEL_WIDTH = 960;
-    private static final int PANEL_HEIGHT = 540;
+    private static final int PANEL_WIDTH = 1680;
+    private static final int PANEL_HEIGHT = 720;
     private static final int TARGET_FPS = 60;
     private static final int FLOOR_HEIGHT = 60;
 
