@@ -2,7 +2,11 @@ package com.tekki.core;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Random;
+import javax.imageio.ImageIO;
 
 /**
  * Simple AI-controlled fighter.
@@ -28,6 +32,8 @@ public class EnemyFighter extends Fighter {
     private float aggression;
     private boolean dashMore;
 
+    private SpriteAnimation criticalHitEffect;
+
     public EnemyFighter(float startX, float startY, float speedMultiplier, float aggression, boolean dashMore, CharacterProfile profile) {
         super(startX, startY, 50, 100, 100, profile);
         this.name = profile != null ? profile.getName() : "CPU Fighter";
@@ -42,6 +48,8 @@ public class EnemyFighter extends Fighter {
         this.dashMore = dashMore;
         this.dashCooldown = (dashMore ? 0.75f : 1.0f) / this.aggression;
         this.dashSpeed = 800f * this.speedMultiplier * (dashMore ? 1.3f : 1.0f);
+
+        loadCriticalEffect();
     }
 
     /**
@@ -139,12 +147,29 @@ public class EnemyFighter extends Fighter {
             }
         }
         super.update(deltaTime);
+        updateCriticalEffectAnimation(deltaTime);
     }
 
     @Override
     public void render(Graphics2D g2d) {
         g2d.setColor(colorForState());
         g2d.fillRect((int) x, (int) y, width, height);
+
+        if (isCriticalEffectActive() && criticalHitEffect != null) {
+            BufferedImage frame = criticalHitEffect.getCurrentFrame();
+            float scale = height / (float) frame.getHeight();
+            int drawWidth = Math.round(frame.getWidth() * scale);
+            int drawHeight = Math.round(frame.getHeight() * scale);
+            float bottomY = y + height;
+            int drawY = Math.round(bottomY - drawHeight);
+            int drawX = Math.round(getCenterX() - drawWidth / 2f);
+
+            if (facingRight) {
+                g2d.drawImage(frame, drawX, drawY, drawWidth, drawHeight, null);
+            } else {
+                g2d.drawImage(frame, drawX + drawWidth, drawY, -drawWidth, drawHeight, null);
+            }
+        }
     }
 
     private boolean shouldDash(float distance) {
