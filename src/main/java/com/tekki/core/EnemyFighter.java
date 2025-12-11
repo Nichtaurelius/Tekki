@@ -40,10 +40,8 @@ public class EnemyFighter extends Fighter {
         this.speedMultiplier = Math.max(0.5f, speedMultiplier);
         this.aggression = Math.max(0.5f, aggression);
         this.dashMore = dashMore;
-        if (dashMore) {
-            this.dashCooldown = 0.75f;
-            this.dashSpeed = 900f;
-        }
+        this.dashCooldown = (dashMore ? 0.75f : 1.0f) / this.aggression;
+        this.dashSpeed = 800f * this.speedMultiplier * (dashMore ? 1.3f : 1.0f);
     }
 
     /**
@@ -163,9 +161,10 @@ public class EnemyFighter extends Fighter {
     }
 
     private boolean shouldDash(float distance) {
-        int chance = dashMore ? 55 : 35;
+        float baseChance = dashMore ? 0.55f : 0.35f;
+        float scaledChance = Math.min(0.95f, baseChance * aggression);
         return onGround && distance > preferredDistance && distance < preferredDistance + 180f && dashCooldownTimer <= 0f
-                && random.nextInt(100) < chance;
+                && random.nextFloat() < scaledChance;
     }
 
     private void startDashToward(PlayerFighter player) {

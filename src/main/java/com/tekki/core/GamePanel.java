@@ -171,7 +171,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
 
         if (enemy.canHit() && enemyHit != null && enemyHit.intersects(playerBounds)) {
-            player.takeDamage(10);
+            int enemyDamage = currentLevel != null ? currentLevel.getEnemyDamage() : 10;
+            player.takeDamage(enemyDamage);
             enemy.markHit();
         }
 
@@ -329,8 +330,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private void initLevels() {
         levels.clear();
-        levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false));
-        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 1.3f, 1.5f, true));
+        levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false, 10));
+        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 2.0f, 2.2f, true, 15));
     }
 
     private void startLevel(int levelIndex) {
