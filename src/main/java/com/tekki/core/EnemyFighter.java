@@ -44,6 +44,7 @@ public class EnemyFighter extends Fighter {
     private SpriteAnimation fallAnimation;
     private SpriteAnimation attack1Animation;
     private SpriteAnimation attack2Animation;
+    private SpriteAnimation attack3Animation;
     private SpriteAnimation takeHitAnimation;
     private SpriteAnimation deathAnimation;
     private SpriteAnimation currentAnimation;
@@ -235,24 +236,38 @@ public class EnemyFighter extends Fighter {
 
     private void loadAnimations() {
         String basePath = "Tekki/src/main/resources/sprites/enemies/" + spriteFolder + "/";
-        BufferedImage idleSheet = loadSpriteFromFile(basePath + "Idle.png");
-        BufferedImage runSheet = loadSpriteFromFile(basePath + "Run.png");
-        BufferedImage jumpSheet = loadSpriteFromFile(basePath + "Jump.png");
-        BufferedImage fallSheet = loadSpriteFromFile(basePath + "Fall.png");
-        BufferedImage attack1Sheet = loadSpriteFromFile(basePath + "Attack1.png");
-        BufferedImage attack2Sheet = loadSpriteFromFile(basePath + "Attack2.png");
-        BufferedImage takeHitSheet = loadSpriteFromFile(basePath + "Take Hit.png");
-        BufferedImage deathSheet = loadSpriteFromFile(basePath + "Death.png");
+        EnemyAnimationConfig.AnimationSet animationConfig = EnemyAnimationConfig.forEnemy(spriteFolder);
 
-        idleAnimation = new SpriteAnimation(idleSheet, 8, 0.12f, true);
-        runAnimation = new SpriteAnimation(runSheet, 8, 0.08f, true);
-        jumpAnimation = new SpriteAnimation(jumpSheet, 4, 0.1f, false);
-        fallAnimation = new SpriteAnimation(fallSheet, 4, 0.1f, false);
-        attack1Animation = new SpriteAnimation(attack1Sheet, 6, 0.04f, false);
-        attack2Animation = new SpriteAnimation(attack2Sheet, 6, 0.07f, false);
-        takeHitAnimation = new SpriteAnimation(takeHitSheet, 4, 0.09f, false);
-        deathAnimation = new SpriteAnimation(deathSheet, 6, 0.12f, false);
+        idleAnimation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.IDLE,
+                basePath + "Idle.png", 0.12f, true);
+        runAnimation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.RUN,
+                basePath + "Run.png", 0.08f, true);
+        jumpAnimation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.JUMP,
+                basePath + "Jump.png", 0.1f, false);
+        fallAnimation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.FALL,
+                basePath + "Fall.png", 0.1f, false);
+        attack1Animation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.ATTACK1,
+                basePath + "Attack1.png", 0.04f, false);
+        attack2Animation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.ATTACK2,
+                basePath + "Attack2.png", 0.07f, false);
+        attack3Animation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.ATTACK3,
+                basePath + "Attack3.png", 0.07f, false);
+        takeHitAnimation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.TAKE_HIT,
+                basePath + "Take Hit.png", 0.09f, false);
+        deathAnimation = createAnimation(animationConfig, EnemyAnimationConfig.AnimationType.DEATH,
+                basePath + "Death.png", 0.12f, false);
     }
+
+    private SpriteAnimation createAnimation(EnemyAnimationConfig.AnimationSet animationConfig,
+            EnemyAnimationConfig.AnimationType type, String path, float frameDuration, boolean loop) {
+        Integer frameCount = animationConfig.getFrameCount(type);
+        if (frameCount == null) {
+            return null;
+        }
+        BufferedImage sheet = loadSpriteFromFile(path);
+        return new SpriteAnimation(sheet, frameCount, frameDuration, loop);
+    }
+
     private void updateCurrentAnimation(float deltaTime) {
         SpriteAnimation nextAnimation = idleAnimation;
 
