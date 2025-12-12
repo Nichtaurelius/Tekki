@@ -1,6 +1,5 @@
 package com.tekki.core;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -9,7 +8,7 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 /**
- * Simple AI-controlled fighter.
+ * Simple AI-controlled fighter without critical-hit visual effects.
  */
 public class EnemyFighter extends Fighter {
 
@@ -190,33 +189,4 @@ public class EnemyFighter extends Fighter {
         state = FighterState.DASHING;
     }
 
-    @Override
-    protected void onCriticalHitTriggered() {
-        if (criticalHitEffect != null) {
-            criticalHitEffect.reset();
-        }
-    }
-
-    private void loadCriticalEffect() {
-        BufferedImage critSheet = loadSpriteFromFile("Tekki/src/main/resources/sprites/player/Take Hit - white silhouette.png");
-        criticalHitEffect = new SpriteAnimation(critSheet, 4, 0.05f, true);
-    }
-
-    private BufferedImage loadSpriteFromFile(String relativePath) {
-        File file = new File(relativePath);
-        if (!file.exists()) {
-            throw new IllegalStateException("Sprite file not found: " + file.getAbsolutePath());
-        }
-        try {
-            return ImageIO.read(file);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not read sprite file: " + file.getAbsolutePath(), e);
-        }
-    }
-
-    private void updateCriticalEffectAnimation(float deltaTime) {
-        if (isCriticalEffectActive() && criticalHitEffect != null) {
-            criticalHitEffect.update(deltaTime);
-        }
-    }
 }
