@@ -451,8 +451,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private void initLevels() {
         levels.clear();
-        levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false, 10));
-        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 2.0f, 2.2f, true, 20));
+        levels.add(new Level("Dojo", new Color(50, 70, 90), new Color(90, 70, 50), 1.0f, 1.0f, false, 10, "enemy1"));
+        levels.add(new Level("Rooftop", new Color(40, 40, 90), new Color(80, 80, 90), 2.0f, 2.2f, true, 20, "enemy2"));
     }
 
     private void startLevel(int levelIndex) {
@@ -469,7 +469,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         player.snapToGround();
 
         enemy = new EnemyFighter(PANEL_WIDTH - 220f, 0f, currentLevel.getEnemySpeedMultiplier(),
-                currentLevel.getEnemyAggression(), currentLevel.isEnemyDashesMore(), enemyProfile);
+                currentLevel.getEnemyAggression(), currentLevel.isEnemyDashesMore(), enemyProfile,
+                currentLevel.getEnemySpriteFolder());
         enemy.setGroundFromFloorTop(floorTopY);
         enemy.snapToGround();
         leftPressed = false;
